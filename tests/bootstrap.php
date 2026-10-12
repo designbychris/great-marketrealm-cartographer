@@ -7,3 +7,5 @@ if (!defined('ABSPATH')) {
 }
 
 require_once dirname(__DIR__) . '/src/Workshop.php';
+
+require_once dirname(__DIR__) . '/src/Drafts.php';
