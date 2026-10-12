@@ -81,7 +81,7 @@ final class Workshop
             wp_die(esc_html__('The Workshop is reserved for authorised Keepers.', 'great-marketrealm-cartographer'), '', ['response' => 403]);
         }
         $campaign = sanitize_text_field((string) wp_unslash($_GET['campaign_id'] ?? ''));
-        if ($campaign !== '' && !Drafts::campaignAllowed(get_current_user_id(), $campaign)) {
+        if ($campaign !== '' && !Drafts::allowed(get_current_user_id(), $campaign)) {
             wp_die(esc_html__('This campaign is not available to your account.', 'great-marketrealm-cartographer'), '', ['response' => 403]);
         }
         nocache_headers();
