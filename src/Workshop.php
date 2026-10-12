@@ -85,20 +85,17 @@ final class Workshop
             wp_die(esc_html__('This campaign is not available to your account.', 'great-marketrealm-cartographer'), '', ['response' => 403]);
         }
         nocache_headers();
-        header('Content-Type: text/html; charset=' . get_bloginfo('charset'));
+        // Render inside the active WordPress theme, allowing Elementor Theme Builder
+        // headers and footers to participate via the theme's standard hooks.
+        status_header(200);
         $name = CompanionBridge::campaigns(get_current_user_id())[$campaign] ?? '';
         $returnUrl = $campaign !== ''
             ? add_query_arg('gmrc_route', 'dungeon-master/campaigns/' . rawurlencode($campaign), home_url('/companion/'))
             : home_url('/companion/');
-        ?><!doctype html>
-<html <?php language_attributes(); ?>>
-<head>
-<meta charset="<?php echo esc_attr(get_bloginfo('charset')); ?>">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title><?php echo esc_html__('Cartographer’s Workshop', 'great-marketrealm-cartographer'); ?> — <?php echo esc_html(get_bloginfo('name')); ?></title>
-<?php wp_head(); ?>
+        get_header();
+        ?>
 <style>
-body.gmrcart-realm{margin:0;background:#100d13;color:#f7ead3;font-family:system-ui,-apple-system,Segoe UI,sans-serif}
+.gmrcart-realm{background:#100d13;color:#f7ead3;font-family:system-ui,-apple-system,Segoe UI,sans-serif;min-height:70vh}
 .gmrcart-realm *{box-sizing:border-box}.gmrcart-shell{max-width:1120px;margin:0 auto;padding:32px 22px 80px}
 .gmrcart-top{display:flex;justify-content:space-between;align-items:center;gap:18px;flex-wrap:wrap}
 .gmrcart-top a{color:#f4c980;text-decoration:none}.gmrcart-hero{margin:24px 0 28px;padding:42px 36px;border:1px solid #7b5a34;border-radius:18px;background:linear-gradient(115deg,#2c1b25,#24191c 58%,#48311f);box-shadow:0 20px 60px #0007}
@@ -115,10 +112,7 @@ body.gmrcart-realm{margin:0;background:#100d13;color:#f7ead3;font-family:system-
 .gmrcart-muted{color:#dac5ac;line-height:1.6}.gmrcart-notice{padding:12px;border:1px solid #c79b52;border-radius:8px;margin-bottom:18px}
 @media(max-width:760px){.gmrcart-layout{grid-template-columns:1fr}.gmrcart-hero{padding:28px 22px}}
 </style>
-</head>
-<body <?php body_class('gmrcart-realm'); ?>>
-<?php wp_body_open(); ?>
-<main class="gmrcart-shell">
+<main class="gmrcart-realm"><div class="gmrcart-shell">
 <nav class="gmrcart-top" aria-label="<?php echo esc_attr__('Workshop navigation', 'great-marketrealm-cartographer'); ?>">
 <strong>✦ <?php echo esc_html__('The Great MarketRealm · Cartographer', 'great-marketrealm-cartographer'); ?></strong>
 <a href="<?php echo esc_url($returnUrl); ?>">← <?php echo esc_html__('Return to Dungeon Master’s Desk', 'great-marketrealm-cartographer'); ?></a>
@@ -130,9 +124,9 @@ body.gmrcart-realm{margin:0;background:#100d13;color:#f7ead3;font-family:system-
 <p><?php echo esc_html__('Shape the foundations of future adventures. Scene building and Tabletop publishing will arrive in later phases.', 'great-marketrealm-cartographer'); ?></p>
 </section>
 <?php self::renderFrontendContent($campaign); ?>
-</main>
-<?php wp_footer(); ?>
-</body></html><?php
+</div></main>
+<?php get_footer(); ?>
+<?php
         exit;
     }
 
