@@ -47,12 +47,8 @@ final class Workshop
 
     public static function shortcode(): string
     {
-        if (!self::canAccess()) {
-            return '<p>' . esc_html__('The Cartographer’s Workshop is reserved for authorised Keepers.', 'great-marketrealm-cartographer') . '</p>';
-        }
-        ob_start();
-        self::render();
-        return (string) ob_get_clean();
+        $campaign = sanitize_text_field((string) wp_unslash($_GET['campaign_id'] ?? ''));
+        return self::workshopMarkup($campaign);
     }
 
     public static function createDraft(): void
@@ -62,37 +58,49 @@ final class Workshop
         $campaign=sanitize_text_field((string)wp_unslash($_POST['campaign_id']??''));
         $name=sanitize_text_field((string)wp_unslash($_POST['draft_title']??''));
         if (!Drafts::create(get_current_user_id(),$campaign,$name)) wp_die('Campaign not authorised', '', ['response'=>403]);
-        $destination = add_query_arg(['gmrcart_workshop' => '1', 'campaign_id' => $campaign, 'created' => '1'], home_url('/'));
+        $destination = function_exists('gmrcart_workshop_url') ? gmrcart_workshop_url($campaign) : home_url('/');
+        $destination = add_query_arg('created', '1', $destination);
         wp_safe_redirect($destination);
         exit;
     }
 
 
-    /** Standalone frontend route: does not enter Companion's gmrc_route router. */
+    /** Legacy URL support: redirect only to an existing published Workshop page. */
     public static function frontend(): void
     {
         if (!isset($_GET['gmrcart_workshop']) || (string) $_GET['gmrcart_workshop'] !== '1') return;
-        if (!is_user_logged_in()) {
-            auth_redirect();
-            exit;
-        }
-        if (!self::canAccess()) {
-            status_header(403);
-            wp_die(esc_html__('The Workshop is reserved for authorised Keepers.', 'great-marketrealm-cartographer'), '', ['response' => 403]);
-        }
+        if (!is_user_logged_in()) { auth_redirect(); exit; }
+        if (!self::canAccess()) wp_die(esc_html__('Workshop access denied.', 'great-marketrealm-cartographer'), '', ['response'=>403]);
         $campaign = sanitize_text_field((string) wp_unslash($_GET['campaign_id'] ?? ''));
         if ($campaign !== '' && !Drafts::allowed(get_current_user_id(), $campaign)) {
-            wp_die(esc_html__('This campaign is not available to your account.', 'great-marketrealm-cartographer'), '', ['response' => 403]);
+            wp_die(esc_html__('Campaign access denied.', 'great-marketrealm-cartographer'), '', ['response'=>403]);
         }
+        $page = get_page_by_path('cartographer');
+        if ($page instanceof \WP_Post && $page->post_status === 'publish') {
+            $url = add_query_arg('campaign_id', $campaign, get_permalink($page));
+            wp_safe_redirect($url); exit;
+        }
+        // Retain a working legacy route until the shortcode page is published.
         nocache_headers();
-        // Render inside the active WordPress theme, allowing Elementor Theme Builder
-        // headers and footers to participate via the theme's standard hooks.
-        status_header(200);
+        get_header();
+        echo self::workshopMarkup($campaign);
+        get_footer();
+        exit;
+    }
+
+    /** Elementor-compatible: renders markup only; WordPress owns the page shell. */
+    public static function workshopMarkup(string $campaign): string
+    {
+        if (!is_user_logged_in()) return '<p>' . esc_html__('Please sign in to open the Workshop.', 'great-marketrealm-cartographer') . '</p>';
+        if (!self::canAccess()) return '<p>' . esc_html__('Workshop access denied.', 'great-marketrealm-cartographer') . '</p>';
+        if ($campaign !== '' && !Drafts::allowed(get_current_user_id(), $campaign)) {
+            return '<p>' . esc_html__('Campaign access denied.', 'great-marketrealm-cartographer') . '</p>';
+        }
         $name = CompanionBridge::campaigns(get_current_user_id())[$campaign] ?? '';
         $returnUrl = $campaign !== ''
             ? add_query_arg('gmrc_route', 'dungeon-master/campaigns/' . rawurlencode($campaign), home_url('/companion/'))
             : home_url('/companion/');
-        get_header();
+        ob_start();
         ?>
 <style>
 .gmrcart-realm{background:#100d13;color:#f7ead3;font-family:system-ui,-apple-system,Segoe UI,sans-serif;min-height:70vh}
@@ -125,9 +133,8 @@ final class Workshop
 </section>
 <?php self::renderFrontendContent($campaign); ?>
 </div></main>
-<?php get_footer(); ?>
 <?php
-        exit;
+        return (string) ob_get_clean();
     }
 
     private static function renderFrontendContent(string $campaign): void

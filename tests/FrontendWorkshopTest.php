@@ -12,6 +12,7 @@ final class FrontendWorkshopTest extends TestCase
         self::assertStringContainsString('auth_redirect()', $source);
         self::assertStringContainsString('Drafts::allowed(', $source);
         self::assertStringContainsString('get_header();', $source);
+        self::assertStringContainsString('workshopMarkup($campaign)', $source);
         self::assertStringContainsString('get_footer();', $source);
         self::assertStringNotContainsString('<!doctype html>', $source);
         self::assertStringContainsString('wp_die(', $source);

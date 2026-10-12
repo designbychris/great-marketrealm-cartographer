@@ -28,5 +28,9 @@ function gmrcart_campaign_access(int $userId, string $campaignId): bool
 }
 function gmrcart_workshop_url(string $campaignId): string
 {
-    return add_query_arg('campaign_id', $campaignId, home_url('/?gmrcart_workshop=1'));
+    $page = get_page_by_path('cartographer');
+    $url = ($page instanceof \WP_Post && $page->post_status === 'publish')
+        ? get_permalink($page)
+        : home_url('/?gmrcart_workshop=1');
+    return add_query_arg('campaign_id', $campaignId, $url);
 }
