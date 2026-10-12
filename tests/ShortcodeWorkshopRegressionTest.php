@@ -14,7 +14,7 @@ final class ShortcodeWorkshopRegressionTest extends TestCase
     {
         $source = file_get_contents(dirname(__DIR__) . '/great-marketrealm-cartographer.php');
         self::assertStringContainsString("get_page_by_path('cartographer')", $source);
-        self::assertStringContainsString("$page->post_status === 'publish'", $source);
+        self::assertStringContainsString("\$page->post_status === 'publish'", $source);
         self::assertStringContainsString('get_permalink($page)', $source);
     }
 }
