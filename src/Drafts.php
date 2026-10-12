@@ -14,6 +14,10 @@ final class Drafts {
   update_post_meta((int)$id,'_gmrcart_schema_version',1);
   return (int)$id;
  }
+ /** Campaign metadata stays within the draft repository boundary. */
+ public static function campaignId(int $draftId):string {
+  return $draftId > 0 ? (string)get_post_meta($draftId,'_gmrcart_campaign_id',true) : '';
+ }
  public static function owned(int $user):array {
   if($user<1)return [];
   $posts=get_posts(['post_type'=>self::TYPE,'post_status'=>'private','author'=>$user,'numberposts'=>100]);

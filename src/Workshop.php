@@ -145,7 +145,7 @@ body.gmrcart-realm{margin:0;background:#100d13;color:#f7ead3;font-family:system-
         echo '<ul class="gmrcart-list">';
         $shown = 0;
         foreach ($drafts as $draft) {
-            $draftCampaign = (string) get_post_meta((int) $draft->ID, '_gmrcart_campaign_id', true);
+            $draftCampaign = Drafts::campaignId((int) $draft->ID);
             if ($campaign !== '' && $draftCampaign !== $campaign) continue;
             ++$shown;
             echo '<li><strong>' . esc_html($draft->post_title) . '</strong><div class="gmrcart-muted">' . esc_html($campaigns[$draftCampaign] ?? $draftCampaign) . '</div></li>';
