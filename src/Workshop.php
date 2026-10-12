@@ -12,6 +12,8 @@ final class Workshop
     public static function boot(): void
     {
         require_once __DIR__ . '/Drafts.php';
+        require_once __DIR__ . '/CompanionBridge.php';
+        CompanionBridge::register();
         add_action('init', [Drafts::class, 'register']);
         add_action('admin_menu', [self::class, 'registerMenu']);
         add_action('admin_post_gmrcart_create_draft', [self::class, 'createDraft']);
@@ -30,7 +32,7 @@ final class Workshop
     public static function canAccess(): bool
     {
         // Account-level entitlements will be added separately. Never assume a login is a DM.
-        return is_user_logged_in() && current_user_can('edit_posts') && (bool) apply_filters('gmrcart_keeper_entitled', false, get_current_user_id());
+        return is_user_logged_in() && (bool) apply_filters('gmrcart_keeper_entitled', false, get_current_user_id());
     }
 
     public static function registerMenu(): void
@@ -38,7 +40,7 @@ final class Workshop
         add_menu_page(
             __('Cartographer’s Workshop', 'great-marketrealm-cartographer'),
             __('Cartographer', 'great-marketrealm-cartographer'),
-            'edit_posts', 'gmrcart-workshop', [self::class, 'render'], 'dashicons-location-alt', 59
+            'gmrc_manage_campaigns', 'gmrcart-workshop', [self::class, 'render'], 'dashicons-location-alt', 59
         );
     }
 
@@ -79,7 +81,12 @@ final class Workshop
         echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '">';
         echo '<input type="hidden" name="action" value="gmrcart_create_draft">';
         wp_nonce_field('gmrcart_create_draft');
-        echo '<p><label>Campaign ID <input name="campaign_id" required></label></p>';
+        echo '<p><label>' . esc_html__('Campaign', 'great-marketrealm-cartographer') . ' <select name="campaign_id" required>';
+        echo '<option value="">' . esc_html__('Select a campaign', 'great-marketrealm-cartographer') . '</option>';
+        foreach (CompanionBridge::campaigns(get_current_user_id()) as $campaignId => $campaignName) {
+            echo '<option value="' . esc_attr($campaignId) . '">' . esc_html($campaignName) . '</option>';
+        }
+        echo '</select></label></p>';
         echo '<p><label>Draft name <input name="draft_title" required></label></p>';
         submit_button(__('Create drafting table', 'great-marketrealm-cartographer'));
         echo '</form></div>';
