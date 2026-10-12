@@ -19,3 +19,14 @@ add_action('init', static function (): void {
 add_action('plugins_loaded', static function (): void {
     \GreatMarketrealmCartographer\Workshop::boot();
 }, 30);
+
+/** Public read-only bridge for the Companion campaign dashboard. */
+function gmrcart_campaign_access(int $userId, string $campaignId): bool
+{
+    if ($userId < 1 || $campaignId === '' || !class_exists('GreatMarketrealmCartographer\CompanionBridge')) return false;
+    return \GreatMarketrealmCartographer\CompanionBridge::canEditCampaign(false, $userId, $campaignId);
+}
+function gmrcart_workshop_url(string $campaignId): string
+{
+    return add_query_arg('campaign_id', $campaignId, admin_url('admin.php?page=gmrcart-workshop'));
+}

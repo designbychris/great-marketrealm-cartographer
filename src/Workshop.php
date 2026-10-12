@@ -83,8 +83,9 @@ final class Workshop
         wp_nonce_field('gmrcart_create_draft');
         echo '<p><label>' . esc_html__('Campaign', 'great-marketrealm-cartographer') . ' <select name="campaign_id" required>';
         echo '<option value="">' . esc_html__('Select a campaign', 'great-marketrealm-cartographer') . '</option>';
+        $selectedCampaign = sanitize_text_field((string) wp_unslash($_GET['campaign_id'] ?? ''));
         foreach (CompanionBridge::campaigns(get_current_user_id()) as $campaignId => $campaignName) {
-            echo '<option value="' . esc_attr($campaignId) . '">' . esc_html($campaignName) . '</option>';
+            echo '<option value="' . esc_attr($campaignId) . '"' . selected($selectedCampaign, (string) $campaignId, false) . '>' . esc_html($campaignName) . '</option>';
         }
         echo '</select></label></p>';
         echo '<p><label>Draft name <input name="draft_title" required></label></p>';
