@@ -28,5 +28,5 @@ function gmrcart_campaign_access(int $userId, string $campaignId): bool
 }
 function gmrcart_workshop_url(string $campaignId): string
 {
-    return add_query_arg('campaign_id', $campaignId, admin_url('admin.php?page=gmrcart-workshop'));
+    return add_query_arg('campaign_id', $campaignId, home_url('/?gmrcart_workshop=1'));
 }

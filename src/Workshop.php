@@ -16,6 +16,7 @@ final class Workshop
         CompanionBridge::register();
         add_action('init', [Drafts::class, 'register']);
         add_action('admin_menu', [self::class, 'registerMenu']);
+        add_action('template_redirect', [self::class, 'frontend']);
         add_action('admin_post_gmrcart_create_draft', [self::class, 'createDraft']);
         add_shortcode('gmrcart_workshop', [self::class, 'shortcode']);
         add_filter('gmrcart_capabilities', [self::class, 'capabilities']);
@@ -61,8 +62,105 @@ final class Workshop
         $campaign=sanitize_text_field((string)wp_unslash($_POST['campaign_id']??''));
         $name=sanitize_text_field((string)wp_unslash($_POST['draft_title']??''));
         if (!Drafts::create(get_current_user_id(),$campaign,$name)) wp_die('Campaign not authorised', '', ['response'=>403]);
-        wp_safe_redirect(admin_url('admin.php?page=gmrcart-workshop&created=1'));
+        $destination = add_query_arg(['gmrcart_workshop' => '1', 'campaign_id' => $campaign, 'created' => '1'], home_url('/'));
+        wp_safe_redirect($destination);
         exit;
+    }
+
+
+    /** Standalone frontend route: does not enter Companion's gmrc_route router. */
+    public static function frontend(): void
+    {
+        if (!isset($_GET['gmrcart_workshop']) || (string) $_GET['gmrcart_workshop'] !== '1') return;
+        if (!is_user_logged_in()) {
+            auth_redirect();
+            exit;
+        }
+        if (!self::canAccess()) {
+            status_header(403);
+            wp_die(esc_html__('The Workshop is reserved for authorised Keepers.', 'great-marketrealm-cartographer'), '', ['response' => 403]);
+        }
+        $campaign = sanitize_text_field((string) wp_unslash($_GET['campaign_id'] ?? ''));
+        if ($campaign !== '' && !Drafts::campaignAllowed(get_current_user_id(), $campaign)) {
+            wp_die(esc_html__('This campaign is not available to your account.', 'great-marketrealm-cartographer'), '', ['response' => 403]);
+        }
+        nocache_headers();
+        header('Content-Type: text/html; charset=' . get_bloginfo('charset'));
+        $name = CompanionBridge::campaigns(get_current_user_id())[$campaign] ?? '';
+        $returnUrl = $campaign !== ''
+            ? add_query_arg('gmrc_route', 'dungeon-master/campaigns/' . rawurlencode($campaign), home_url('/companion/'))
+            : home_url('/companion/');
+        ?><!doctype html>
+<html <?php language_attributes(); ?>>
+<head>
+<meta charset="<?php echo esc_attr(get_bloginfo('charset')); ?>">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title><?php echo esc_html__('Cartographer’s Workshop', 'great-marketrealm-cartographer'); ?> — <?php echo esc_html(get_bloginfo('name')); ?></title>
+<?php wp_head(); ?>
+<style>
+body.gmrcart-realm{margin:0;background:#100d13;color:#f7ead3;font-family:system-ui,-apple-system,Segoe UI,sans-serif}
+.gmrcart-realm *{box-sizing:border-box}.gmrcart-shell{max-width:1120px;margin:0 auto;padding:32px 22px 80px}
+.gmrcart-top{display:flex;justify-content:space-between;align-items:center;gap:18px;flex-wrap:wrap}
+.gmrcart-top a{color:#f4c980;text-decoration:none}.gmrcart-hero{margin:24px 0 28px;padding:42px 36px;border:1px solid #7b5a34;border-radius:18px;background:linear-gradient(115deg,#2c1b25,#24191c 58%,#48311f);box-shadow:0 20px 60px #0007}
+.gmrcart-kicker{letter-spacing:.16em;text-transform:uppercase;color:#e6b967;font-size:.75rem;font-weight:800}
+.gmrcart-hero h1{font-family:Georgia,serif;font-size:clamp(2rem,5vw,3.6rem);margin:12px 0}
+.gmrcart-hero p{max-width:680px;line-height:1.65;color:#e5d4be}
+.gmrcart-layout{display:grid;grid-template-columns:1.2fr 1fr;gap:22px}
+.gmrcart-panel{background:#251b23;border:1px solid #715034;border-radius:14px;padding:26px;box-shadow:0 12px 30px #0005}
+.gmrcart-panel h2{font-family:Georgia,serif;color:#f9db9f;margin:0 0 20px}
+.gmrcart-panel label{display:block;margin:0 0 14px;font-weight:700}
+.gmrcart-panel input,.gmrcart-panel select{width:100%;margin-top:7px;padding:12px;background:#150f15;color:#fff;border:1px solid #98724a;border-radius:8px}
+.gmrcart-button{background:#d6a44f;color:#24151b;border:0;border-radius:8px;padding:12px 20px;font-weight:800;cursor:pointer}
+.gmrcart-list{list-style:none;padding:0;margin:0}.gmrcart-list li{border:1px solid #61472e;background:#34252a;padding:14px;border-radius:9px;margin:0 0 10px}
+.gmrcart-muted{color:#dac5ac;line-height:1.6}.gmrcart-notice{padding:12px;border:1px solid #c79b52;border-radius:8px;margin-bottom:18px}
+@media(max-width:760px){.gmrcart-layout{grid-template-columns:1fr}.gmrcart-hero{padding:28px 22px}}
+</style>
+</head>
+<body <?php body_class('gmrcart-realm'); ?>>
+<?php wp_body_open(); ?>
+<main class="gmrcart-shell">
+<nav class="gmrcart-top" aria-label="<?php echo esc_attr__('Workshop navigation', 'great-marketrealm-cartographer'); ?>">
+<strong>✦ <?php echo esc_html__('The Great MarketRealm · Cartographer', 'great-marketrealm-cartographer'); ?></strong>
+<a href="<?php echo esc_url($returnUrl); ?>">← <?php echo esc_html__('Return to Dungeon Master’s Desk', 'great-marketrealm-cartographer'); ?></a>
+</nav>
+<section class="gmrcart-hero">
+<div class="gmrcart-kicker"><?php echo esc_html__('The Keeper’s drafting room', 'great-marketrealm-cartographer'); ?></div>
+<h1><?php echo esc_html__('Cartographer’s Workshop', 'great-marketrealm-cartographer'); ?></h1>
+<p><?php echo esc_html($name !== '' ? $name : __('Choose a campaign and begin a private construction draft.', 'great-marketrealm-cartographer')); ?></p>
+<p><?php echo esc_html__('Shape the foundations of future adventures. Scene building and Tabletop publishing will arrive in later phases.', 'great-marketrealm-cartographer'); ?></p>
+</section>
+<?php self::renderFrontendContent($campaign); ?>
+</main>
+<?php wp_footer(); ?>
+</body></html><?php
+        exit;
+    }
+
+    private static function renderFrontendContent(string $campaign): void
+    {
+        $campaigns = CompanionBridge::campaigns(get_current_user_id());
+        $drafts = Drafts::owned(get_current_user_id());
+        echo '<div class="gmrcart-layout"><section class="gmrcart-panel"><h2>' . esc_html__('My drafting tables', 'great-marketrealm-cartographer') . '</h2>';
+        if (isset($_GET['created'])) echo '<p class="gmrcart-notice" role="status">' . esc_html__('Draft created.', 'great-marketrealm-cartographer') . '</p>';
+        echo '<ul class="gmrcart-list">';
+        $shown = 0;
+        foreach ($drafts as $draft) {
+            $draftCampaign = (string) get_post_meta((int) $draft->ID, '_gmrcart_campaign_id', true);
+            if ($campaign !== '' && $draftCampaign !== $campaign) continue;
+            ++$shown;
+            echo '<li><strong>' . esc_html($draft->post_title) . '</strong><div class="gmrcart-muted">' . esc_html($campaigns[$draftCampaign] ?? $draftCampaign) . '</div></li>';
+        }
+        if ($shown === 0) echo '<li class="gmrcart-muted">' . esc_html__('No drafting tables yet. Create the first one!', 'great-marketrealm-cartographer') . '</li>';
+        echo '</ul></section><section class="gmrcart-panel"><h2>' . esc_html__('New drafting table', 'great-marketrealm-cartographer') . '</h2>';
+        echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '">';
+        echo '<input type="hidden" name="action" value="gmrcart_create_draft">';
+        wp_nonce_field('gmrcart_create_draft');
+        echo '<label>' . esc_html__('Campaign', 'great-marketrealm-cartographer') . '<select name="campaign_id" required>';
+        foreach ($campaigns as $id => $label) {
+            echo '<option value="' . esc_attr((string) $id) . '"' . selected($campaign, (string) $id, false) . '>' . esc_html($label) . '</option>';
+        }
+        echo '</select></label><label>' . esc_html__('Draft name', 'great-marketrealm-cartographer') . '<input name="draft_title" maxlength="160" required></label>';
+        echo '<button type="submit" class="gmrcart-button">' . esc_html__('Create drafting table', 'great-marketrealm-cartographer') . '</button></form></section></div>';
     }
 
     public static function render(): void
