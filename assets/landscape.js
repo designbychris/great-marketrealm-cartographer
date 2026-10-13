@@ -64,7 +64,53 @@ objects.forEach((o,index)=>{
  const front=Math.max(...corners.map(([x,y])=>depth(x,y)));
  raised.push({kind:'prefab',object:o,depth:front,tie:1,index});
 });
-raised.sort((a,b)=>a.depth-b.depth||a.tie-b.tie||(a.y??0)-(b.y??0)||(a.x??0)-(b.x??0)||(a.index??0)-(b.index??0));
+// VI.6B.5: Occlusion judgement is camera-relative, derived from ground footprints.
+// A strict dependency exists only when one footprint is entirely behind another
+// on either oriented ground axis. Ambiguous/intersecting footprints retain a
+// deterministic painter-order fallback; never invent a dependency cycle.
+function footprint(item){
+ const o=item.object,x=o?o.x:item.x,y=o?o.y:item.y;
+ let w=1,h=1;
+ if(o){[w,h]=window.gmrcartScene?.prefabs?.[o.type]?.size||[1,1];if(o.rotation%180)[w,h]=[h,w];}
+ const corners=[[x,y],[x+w,y],[x+w,y+h],[x,y+h]].map(([px,py])=>orient(px,py));
+ return {u0:Math.min(...corners.map(c=>c[0])),u1:Math.max(...corners.map(c=>c[0])),v0:Math.min(...corners.map(c=>c[1])),v1:Math.max(...corners.map(c=>c[1]))};
+}
+function projectedBounds(item){
+ const f=footprint(item), corners=[[f.u0,f.v0],[f.u1,f.v0],[f.u1,f.v1],[f.u0,f.v1]];
+ const sx=corners.map(([u,v])=>origin+(u-v)*tw/2);
+ const sy=corners.map(([u,v])=>30+(u+v)*th/2);
+ const height=item.kind==='tree'?49:item.kind==='wall'?13:item.kind==='prefab'?40:0;
+ return {left:Math.min(...sx),right:Math.max(...sx),top:Math.min(...sy)-height,bottom:Math.max(...sy)};
+}
+function overlap(a,b){return a.left<b.right&&b.left<a.right&&a.top<b.bottom&&b.top<a.bottom;}
+function strictBehind(a,b){
+ // On the isometric ground plane, either axis establishes an unambiguous
+ // behind/in-front relationship when the intervals do not intersect.
+ return (a.u1<=b.u0||a.v1<=b.v0)&&!(b.u1<=a.u0||b.v1<=a.v0);
+}
+function painterCompare(a,b){return a.depth-b.depth||a.tie-b.tie||(a.y??0)-(b.y??0)||(a.x??0)-(b.x??0)||(a.index??0)-(b.index??0);}
+function judgeOcclusion(items){
+ const footprints=items.map(footprint),bounds=items.map(projectedBounds);
+ const edges=items.map(()=>[]),incoming=items.map(()=>0),conflicts=[];
+ for(let i=0;i<items.length;i++)for(let j=i+1;j<items.length;j++){
+  if(!overlap(bounds[i],bounds[j]))continue;
+  const ij=strictBehind(footprints[i],footprints[j]),ji=strictBehind(footprints[j],footprints[i]);
+  if(ij&&!ji){edges[i].push(j);incoming[j]++;}
+  else if(ji&&!ij){edges[j].push(i);incoming[i]++;}
+  else conflicts.push([i,j]);
+ }
+ const pending=new Set(items.map((_,i)=>i)),result=[];
+ while(pending.size){
+  const ready=Array.from(pending).filter(i=>incoming[i]===0).sort((i,j)=>painterCompare(items[i],items[j])||i-j);
+  // Cyclic or genuinely intersecting geometry is intentionally conservative.
+  const next=ready.length?ready[0]:Array.from(pending).sort((i,j)=>painterCompare(items[i],items[j])||i-j)[0];
+  pending.delete(next);result.push(next);
+  for(const target of edges[next])incoming[target]--;
+ }
+ return {ordered:result.map(i=>items[i]),conflicts,footprints,bounds};
+}
+const judgement=judgeOcclusion(raised);
+raised.splice(0,raised.length,...judgement.ordered);
 // Diagnostic overlay is drawn last and never enters scene persistence.
 const debugEntries=raised.map((item,index)=>({item,index}));
 raised.forEach(item=>{
@@ -84,6 +130,10 @@ else{polygon([a,d,point(o.x,o.y+h,top),point(o.x,o.y,top)],'#cbb38a');polygon([d
 });
 if(depthDebug){
  const overlay=node('g',{'data-gmrcart-depth-debug':'true','pointer-events':'none'});
+ // Show ambiguous projected overlaps without changing any saved data.
+ const status=node('text',{x:12,y:18,fill:'#fff1bb','font-size':10,stroke:'#241b23','stroke-width':2,'paint-order':'stroke'},overlay);
+ status.textContent=`Occlusion audit: ${judgement.conflicts.length} ambiguous overlap pairs`;
+
  debugEntries.forEach(({item,index})=>{
   const o=item.object, x=o?o.x:item.x, y=o?o.y:item.y;
   let w=1,h=1;
