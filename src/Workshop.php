@@ -13,6 +13,7 @@ final class Workshop
     {
         require_once __DIR__ . '/Drafts.php';
         require_once __DIR__ . '/CompanionBridge.php';
+        require_once __DIR__ . '/Scene.php';
         require_once __DIR__ . '/WorkshopEntitlement.php';
         WorkshopEntitlement::register();
         CompanionBridge::register();
@@ -20,6 +21,7 @@ final class Workshop
         add_action('admin_menu', [self::class, 'registerMenu']);
         add_action('template_redirect', [self::class, 'frontend']);
         add_action('admin_post_gmrcart_create_draft', [self::class, 'createDraft']);
+        add_action('wp_ajax_gmrcart_save_scene', [Scene::class, 'save']);
         add_shortcode('gmrcart_workshop', [self::class, 'shortcode']);
         add_filter('gmrcart_capabilities', [self::class, 'capabilities']);
     }
@@ -134,6 +136,7 @@ final class Workshop
 <p><?php echo esc_html__('Shape the foundations of future adventures. Scene building and Tabletop publishing will arrive in later phases.', 'great-marketrealm-cartographer'); ?></p>
 </section>
 <?php self::renderFrontendContent($campaign); ?>
+<?php self::renderEditor($campaign); ?>
 </div></main>
 <?php
         return (string) ob_get_clean();
@@ -151,7 +154,7 @@ final class Workshop
             $draftCampaign = Drafts::campaignId((int) $draft->ID);
             if ($campaign !== '' && $draftCampaign !== $campaign) continue;
             ++$shown;
-            echo '<li><strong>' . esc_html($draft->post_title) . '</strong><div class="gmrcart-muted">' . esc_html($campaigns[$draftCampaign] ?? $draftCampaign) . '</div></li>';
+            echo '<li><strong>' . esc_html($draft->post_title) . '</strong><div class="gmrcart-muted">' . esc_html($campaigns[$draftCampaign] ?? $draftCampaign) . '</div><a style="color:#f4c980" href="' . esc_url(add_query_arg(['draft_id'=>(int)$draft->ID, 'campaign_id'=>$draftCampaign], remove_query_arg(['created','draft_id']))) . '">' . esc_html__('Open construction canvas', 'great-marketrealm-cartographer') . '</a></li>';
         }
         if ($shown === 0) echo '<li class="gmrcart-muted">' . esc_html__('No drafting tables yet. Create the first one!', 'great-marketrealm-cartographer') . '</li>';
         echo '</ul></section><section class="gmrcart-panel"><h2>' . esc_html__('New drafting table', 'great-marketrealm-cartographer') . '</h2>';
@@ -164,6 +167,38 @@ final class Workshop
         }
         echo '</select></label><label>' . esc_html__('Draft name', 'great-marketrealm-cartographer') . '<input name="draft_title" maxlength="160" required></label>';
         echo '<button type="submit" class="gmrcart-button">' . esc_html__('Create drafting table', 'great-marketrealm-cartographer') . '</button></form></section></div>';
+    }
+
+
+    /** Render only the owner's campaign-authorised draft. */
+    private static function renderEditor(string $campaign): void
+    {
+        $draftId = absint($_GET['draft_id'] ?? 0);
+        if (!$draftId) return;
+        if (!Scene::canEdit($draftId, get_current_user_id())) {
+            echo '<p class="gmrcart-notice">' . esc_html__('This construction draft is unavailable.', 'great-marketrealm-cartographer') . '</p>';
+            return;
+        }
+        if ($campaign !== '' && Drafts::campaignId($draftId) !== $campaign) return;
+        $scene = Scene::read($draftId);
+        $config = [
+            'ajax' => admin_url('admin-ajax.php'),
+            'nonce' => wp_create_nonce('gmrcart_scene_' . $draftId),
+            'draftId' => $draftId,
+            'scene' => $scene,
+            'labels' => ['saved'=>__('Scene saved.', 'great-marketrealm-cartographer'), 'error'=>__('Could not save scene.', 'great-marketrealm-cartographer')],
+        ];
+        wp_enqueue_style('gmrcart-canvas', plugins_url('assets/canvas.css', dirname(__FILE__)), [], GMRCART_VERSION);
+        wp_enqueue_script('gmrcart-canvas', plugins_url('assets/canvas.js', dirname(__FILE__)), [], GMRCART_VERSION, true);
+        wp_add_inline_script('gmrcart-canvas', 'window.gmrcartScene = ' . wp_json_encode($config) . ';', 'before');
+        echo '<section class="gmrcart-panel gmrcart-canvas-panel"><h2>' . esc_html__('Pippin’s construction canvas', 'great-marketrealm-cartographer') . '</h2>';
+        echo '<p class="gmrcart-muted">' . esc_html__('Choose a material, then click or drag across the grid. Save to keep your work.', 'great-marketrealm-cartographer') . '</p>';
+        echo '<div class="gmrcart-tools" role="toolbar" aria-label="Construction materials">';
+        foreach (['floor'=>__('Ground', 'great-marketrealm-cartographer'), 'wall'=>__('Wall', 'great-marketrealm-cartographer'), 'water'=>__('Water', 'great-marketrealm-cartographer'), 'tree'=>__('Tree', 'great-marketrealm-cartographer'), 'erase'=>__('Erase', 'great-marketrealm-cartographer')] as $key=>$label) {
+            echo '<button type="button" class="gmrcart-tool" data-material="' . esc_attr($key) . '" aria-pressed="' . ($key === 'floor' ? 'true' : 'false') . '">' . esc_html($label) . '</button>';
+        }
+        echo '</div><div class="gmrcart-grid" role="grid" aria-label="Editable construction grid"></div>';
+        echo '<div class="gmrcart-canvas-actions"><button type="button" class="gmrcart-button gmrcart-save">' . esc_html__('Save construction', 'great-marketrealm-cartographer') . '</button><span class="gmrcart-save-status" role="status" aria-live="polite"></span></div></section>';
     }
 
     public static function render(): void

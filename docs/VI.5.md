@@ -1,0 +1,3 @@
+# VI.5 — Pippin Lays the First Stone
+
+Initial 12×12 private construction canvas. Open an existing draft from the Workshop list, select Ground, Wall, Water, Tree, or Erase; click or drag to paint and save. This is a structural scene foundation, not the final isometric art renderer. Scenes are stored as versioned private post metadata in Cartographer only. Save requires a logged-in entitled Keeper, matching private draft author, campaign edit permission and draft-scoped AJAX nonce. No Tabletop publishing, animations or roofs in this phase. Future renderers should interpret the scene document rather than overwrite it.
