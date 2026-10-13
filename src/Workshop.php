@@ -200,7 +200,7 @@ final class Workshop
             echo '<button type="button" class="gmrcart-tool" data-material="' . esc_attr($key) . '" aria-pressed="' . ($key === 'floor' ? 'true' : 'false') . '">' . esc_html($label) . '</button>';
         }
         echo '</div><button type="button" class="gmrcart-view-toggle" aria-pressed="false">' . esc_html__('View illustrated landscape', 'great-marketrealm-cartographer') . '</button>';
-        echo '<div class="gmrcart-grid" role="grid" aria-label="Editable construction grid"></div><svg class="gmrcart-landscape" hidden xmlns="http://www.w3.org/2000/svg"></svg>';
+        echo '<div class="gmrcart-grid" role="grid" aria-label="Editable construction grid"></div><div class="gmrcart-landscape-frame" hidden><svg class="gmrcart-landscape" xmlns="http://www.w3.org/2000/svg" width="660" height="385" viewBox="0 0 660 385" role="img" aria-label="Isometric construction landscape"></svg></div>';
         echo '<div class="gmrcart-canvas-actions"><button type="button" class="gmrcart-button gmrcart-save">' . esc_html__('Save construction', 'great-marketrealm-cartographer') . '</button><span class="gmrcart-save-status" role="status" aria-live="polite"></span></div></section>';
     }
 

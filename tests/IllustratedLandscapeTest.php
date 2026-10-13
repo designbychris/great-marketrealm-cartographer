@@ -9,6 +9,8 @@ final class IllustratedLandscapeTest extends TestCase {
         self::assertStringContainsString("['gmrcart-canvas']", $workshop);
         self::assertStringContainsString("grid.hidden=active", $js);
         self::assertStringContainsString("preview.hidden=!active", $js);
+        self::assertStringContainsString("frame.hidden=!active", $js);
+        self::assertStringContainsString("gmrcart-landscape-frame", $workshop);
         self::assertStringNotContainsString('fetch(', $js);
         self::assertStringNotContainsString('postMessage(', $js);
     }

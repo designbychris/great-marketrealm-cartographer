@@ -3,3 +3,8 @@
 .gmrcart-landscape[hidden],.gmrcart-grid[hidden]{display:none}
 .gmrcart-view-toggle{margin:12px 0;background:#392c30;color:#f7dca9;border:1px solid #a07844;border-radius:7px;padding:10px 15px;cursor:pointer}
 .gmrcart-view-toggle:focus-visible{outline:3px solid #ffe4a4}
+
+/* VI.5A.1: reserve visible space on Elementor/theme layouts. */
+.gmrcart-canvas-panel .gmrcart-landscape-frame{display:block!important;box-sizing:border-box;width:min(100%,720px);min-height:260px;aspect-ratio:660/385;background:#26352f;border:2px solid #a07844;border-radius:10px;overflow:hidden;margin:12px 0}
+.gmrcart-canvas-panel .gmrcart-landscape-frame[hidden]{display:none!important}
+.gmrcart-canvas-panel .gmrcart-landscape-frame svg.gmrcart-landscape{display:block!important;width:100%!important;height:100%!important;min-height:260px;max-width:none!important;aspect-ratio:660/385;border:0;background:transparent;visibility:visible!important}
