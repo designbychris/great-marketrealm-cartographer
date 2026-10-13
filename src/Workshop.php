@@ -13,6 +13,8 @@ final class Workshop
     {
         require_once __DIR__ . '/Drafts.php';
         require_once __DIR__ . '/CompanionBridge.php';
+        require_once __DIR__ . '/WorkshopEntitlement.php';
+        WorkshopEntitlement::register();
         CompanionBridge::register();
         add_action('init', [Drafts::class, 'register']);
         add_action('admin_menu', [self::class, 'registerMenu']);

@@ -11,3 +11,5 @@ require_once dirname(__DIR__) . '/src/Workshop.php';
 require_once dirname(__DIR__) . '/src/Drafts.php';
 
 require_once dirname(__DIR__) . '/src/CompanionBridge.php';
+
+require_once dirname(__DIR__) . '/src/WorkshopEntitlement.php';

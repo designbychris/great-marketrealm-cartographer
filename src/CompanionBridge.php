@@ -18,7 +18,7 @@ final class CompanionBridge
         if ($userId < 1 || !get_userdata($userId)) return false;
         // Plugin activation is the first optional feature gate. Future account-level
         // Expansions entitlements may restrict this further via this explicit filter.
-        return user_can($userId, self::CAPABILITY);
+        return user_can($userId, self::CAPABILITY) && WorkshopEntitlement::enabled($userId);
     }
     public static function canEditCampaign(bool $granted, int $userId, string $campaignId): bool
     {
