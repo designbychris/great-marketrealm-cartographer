@@ -3,6 +3,8 @@ const root=document.querySelector('.gmrcart-canvas-panel');if(!root||!window.gmr
 const source=window.gmrcartLandscape,grid=root.querySelector('.gmrcart-grid'),preview=root.querySelector('.gmrcart-landscape'),frame=root.querySelector('.gmrcart-landscape-frame'),toggle=root.querySelector('.gmrcart-view-toggle');
 const ns='http://www.w3.org/2000/svg',W=12,H=12,tw=48,th=24,origin=330;
 let active=false,queued=false,orientation=0,illustrationStyle='classic',depthDebug=false;
+// VI.6B.9: view-only camera state; never written to the construction document.
+let zoom=1,panX=0,panY=0;const MIN_ZOOM=.5,MAX_ZOOM=2,BASE_WIDTH=660,BASE_HEIGHT=385;
 const styleControls=root.querySelector('.gmrcart-atlas-style');
 const illustrationToolbar=root.querySelector('.gmrcart-illustration-toolbar');
 const assetLibrary=window.gmrcartAtlasAssets;
@@ -14,6 +16,31 @@ debugButton?.addEventListener('click',()=>{depthDebug=!depthDebug;debugButton.se
 const angleLabel=root.querySelector('.gmrcart-camera-angle');
 const cameraButtons=root.querySelectorAll('[data-gmrcart-camera]');
 const cameraNames=['South-east','South-west','North-west','North-east'];
+// Zoom controls are generated inside the existing illustration toolbar; no theme markup changes.
+const zoomControls=document.createElement('div');zoomControls.className='gmrcart-zoom-controls';
+zoomControls.setAttribute('role','group');zoomControls.setAttribute('aria-label','Illustrated landscape zoom');
+zoomControls.innerHTML='<button type="button" data-gmrcart-zoom="out" aria-label="Zoom out">−</button><output class="gmrcart-zoom-label" aria-live="polite">100%</output><button type="button" data-gmrcart-zoom="in" aria-label="Zoom in">+</button><button type="button" data-gmrcart-zoom="reset">Reset view</button>';
+illustrationToolbar?.appendChild(zoomControls);
+const zoomLabel=zoomControls.querySelector('.gmrcart-zoom-label');
+function clamp(value,min,max){return Math.max(min,Math.min(max,value));}
+function applyViewport(){const width=BASE_WIDTH/zoom,height=BASE_HEIGHT/zoom;
+ panX=clamp(panX,-(BASE_WIDTH-width)/2,(BASE_WIDTH-width)/2);
+ panY=clamp(panY,-(BASE_HEIGHT-height)/2,(BASE_HEIGHT-height)/2);
+ preview.setAttribute('viewBox',`${(BASE_WIDTH-width)/2+panX} ${(BASE_HEIGHT-height)/2+panY} ${width} ${height}`);
+ if(zoomLabel)zoomLabel.textContent=`${Math.round(zoom*100)}%`;
+}
+function setZoom(next,anchorX=.5,anchorY=.5){
+ const oldZoom=zoom;zoom=clamp(Math.round(next*100)/100,MIN_ZOOM,MAX_ZOOM);
+ // Keep the world point beneath the cursor in approximately the same screen position.
+ panX+=(anchorX-.5)*BASE_WIDTH*(1/oldZoom-1/zoom);
+ panY+=(anchorY-.5)*BASE_HEIGHT*(1/oldZoom-1/zoom);
+ applyViewport();
+}
+zoomControls.addEventListener('click',event=>{const action=event.target.closest('button')?.dataset.gmrcartZoom;
+ if(action==='in')setZoom(zoom+.25);else if(action==='out')setZoom(zoom-.25);
+ else if(action==='reset'){zoom=1;panX=0;panY=0;applyViewport();}
+});
+
 const atlas=window.gmrcartAtlasPalettes?.marketrealm||{floor:'#9d9169',empty:'#544a40',wall:'#9a8581',water:'#347d95',tree:'#6e8751',roof:'#bd7959',roofShade:'#955e48',stone:'#b2ada4'};
 function orient(x,y){switch(orientation){case 1:return [W-y,x];case 2:return [W-x,H-y];case 3:return [y,H-x];default:return [x,y];}}
 function node(tag,attrs,parent){const n=document.createElementNS(ns,tag);Object.entries(attrs||{}).forEach(([k,v])=>n.setAttribute(k,String(v)));(parent||preview).appendChild(n);return n;}
@@ -40,7 +67,7 @@ function buildingDetails(o,w,h,top){const cx=o.x+w/2,cy=o.y+h/2;const isTower=o.
  node('ellipse',{cx:anchor[0],cy:anchor[1]-10,rx:3.5,ry:1.5,fill:'#39353c'});
  }
 }
-function draw(){if(!active)return;preview.replaceChildren();preview.setAttribute('viewBox','0 0 660 385');preview.setAttribute('role','img');preview.setAttribute('aria-label',`Isometric preview of the current construction scene, ${cameraNames[orientation]} view`);
+function draw(){if(!active)return;preview.replaceChildren();applyViewport();preview.setAttribute('role','img');preview.setAttribute('aria-label',`Isometric preview of the current construction scene, ${cameraNames[orientation]} view`);
 const tiles=Array.from(grid.querySelectorAll('.gmrcart-cell'));
 const order=[];for(let y=0;y<H;y++)for(let x=0;x<W;x++){const [u,v]=orient(x+.5,y+.5);order.push({x,y,depth:u+v});}order.sort((a,b)=>a.depth-b.depth);for(const {x,y} of order){const mat=tiles[y*W+x]?.dataset.material||'empty';const a=point(x,y),b=point(x+1,y),c=point(x+1,y+1),d=point(x,y+1),center=point(x+.5,y+.5);
 const colors=atlas;polygon([a,b,c,d],mat==='floor'?shade(colors.floor,(x*17+y*11)%19-9):colors[mat]||colors.empty);terrainDetail(x,y,mat);
@@ -217,7 +244,8 @@ const reducedMotion=window.matchMedia?.('(prefers-reduced-motion: reduce)');
 let gesture=null,turnToken=0;
 frame.style.touchAction='pan-y';
 frame.style.cursor='grab';
-frame.setAttribute('aria-label','Illustrated landscape. Drag horizontally to rotate between four views.');
+frame.setAttribute('aria-label','Illustrated landscape. Drag horizontally to rotate; Shift and drag to pan; scroll to zoom.');
+frame.addEventListener('wheel',event=>{if(!active||!event.cancelable)return;event.preventDefault();const bounds=frame.getBoundingClientRect();if(!bounds.width||!bounds.height)return;setZoom(zoom+(event.deltaY<0?.1:-.1),(event.clientX-bounds.left)/bounds.width,(event.clientY-bounds.top)/bounds.height);},{passive:false});
 function cameraLabel(){angleLabel.textContent=`${cameraNames[orientation]} · ${orientation*90}°`;}
 function clearTurnLayer(){frame.querySelectorAll('[data-gmrcart-turn-layer]').forEach(layer=>layer.remove());preview.style.opacity='';}
 function turn(delta,animate=true){
@@ -249,11 +277,13 @@ function turn(delta,animate=true){
 cameraButtons.forEach(button=>button.addEventListener('click',()=>turn(button.dataset.gmrcartCamera==='left'?-1:1)));
 frame.addEventListener('pointerdown',event=>{
  if(!active||event.button!==0||gesture)return;
- gesture={id:event.pointerId,x:event.clientX,y:event.clientY,dragging:false};
+ gesture={id:event.pointerId,x:event.clientX,y:event.clientY,dragging:false,panning:event.shiftKey&&zoom>1,startPanX:panX,startPanY:panY};
+ if(gesture.panning){gesture.dragging=true;frame.style.cursor='grabbing';try{frame.setPointerCapture(event.pointerId);}catch(_error){}}
 });
 frame.addEventListener('pointermove',event=>{
  if(!gesture||event.pointerId!==gesture.id)return;
  const dx=event.clientX-gesture.x,dy=event.clientY-gesture.y;
+ if(gesture.panning){const rect=frame.getBoundingClientRect();if(rect.width&&rect.height){panX=gesture.startPanX-dx*BASE_WIDTH/(rect.width*zoom);panY=gesture.startPanY-dy*BASE_HEIGHT/(rect.height*zoom);applyViewport();}return;}
  if(!gesture.dragging&&Math.abs(dx)>12&&Math.abs(dx)>Math.abs(dy)*1.2){
   gesture.dragging=true;frame.style.cursor='grabbing';
   try{frame.setPointerCapture(event.pointerId);}catch(_error){}
@@ -261,10 +291,10 @@ frame.addEventListener('pointermove',event=>{
 });
 function finishGesture(event,cancelled){
  if(!gesture||event.pointerId!==gesture.id)return;
- const dx=event.clientX-gesture.x,dragging=gesture.dragging;
+ const dx=event.clientX-gesture.x,dragging=gesture.dragging,panning=gesture.panning;
  gesture=null;frame.style.cursor='grab';
  if(frame.hasPointerCapture?.(event.pointerId))frame.releasePointerCapture(event.pointerId);
- if(!cancelled&&dragging&&Math.abs(dx)>=36){
+ if(!cancelled&&dragging&&!panning&&Math.abs(dx)>=36){
   // Dragging right turns the world left, matching a hand turning a model.
   const steps=Math.min(3,Math.max(1,Math.round(Math.abs(dx)/120)));
   turn((dx>0?-1:1)*steps);
@@ -273,6 +303,6 @@ function finishGesture(event,cancelled){
 frame.addEventListener('pointerup',event=>finishGesture(event,false));
 frame.addEventListener('pointercancel',event=>finishGesture(event,true));
 frame.addEventListener('lostpointercapture',()=>{gesture=null;frame.style.cursor='grab';});
-toggle.addEventListener('click',()=>{if(active){++turnToken;clearTurnLayer();gesture=null;}active=!active;preview.hidden=!active;frame.hidden=!active;frame.style.display=active?'block':'none';grid.hidden=active;toggle.setAttribute('aria-pressed',String(active));toggle.textContent=active?'Return to editable grid':'View illustrated landscape';root.querySelector('.gmrcart-camera-controls').hidden=!active;if(illustrationToolbar)illustrationToolbar.hidden=!active;if(styleControls)styleControls.hidden=!active;if(debugButton)debugButton.hidden=!active;cameraButtons.forEach(b=>b.disabled=!active);schedule();});
+toggle.addEventListener('click',()=>{if(active){++turnToken;clearTurnLayer();gesture=null;}active=!active;preview.hidden=!active;frame.hidden=!active;frame.style.display=active?'block':'none';grid.hidden=active;toggle.setAttribute('aria-pressed',String(active));toggle.textContent=active?'Return to editable grid':'View illustrated landscape';root.querySelector('.gmrcart-camera-controls').hidden=!active;if(illustrationToolbar)illustrationToolbar.hidden=!active;zoomControls.hidden=!active;if(styleControls)styleControls.hidden=!active;if(debugButton)debugButton.hidden=!active;cameraButtons.forEach(b=>b.disabled=!active);schedule();});
 root.addEventListener('gmrcart:objects-changed',schedule);grid.addEventListener('pointerdown',schedule);grid.addEventListener('pointermove',e=>{if(e.buttons)schedule();});grid.addEventListener('click',schedule);
 })();
