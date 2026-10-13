@@ -30,3 +30,12 @@
 .gmrcart-camera-controls button{background:#392c30;color:#f7dca9;border:1px solid #a07844;border-radius:7px;padding:9px 12px;cursor:pointer}
 .gmrcart-camera-controls button:focus-visible{outline:3px solid #ffe4a4}
 .gmrcart-camera-angle{min-width:155px;text-align:center;color:#f7dca9;font-weight:600}
+
+/* VI.6: responsive construction workspace, full-width when the page template permits. */
+.gmrcart-realm .gmrcart-grid{width:min(100%,980px)}
+.gmrcart-realm .gmrcart-canvas-panel .gmrcart-landscape-frame{width:min(100%,1200px);max-width:none;aspect-ratio:660/385;min-height:0}
+.gmrcart-realm .gmrcart-canvas-panel .gmrcart-landscape-frame svg.gmrcart-landscape{min-height:0;width:100%!important;height:100%!important}
+.gmrcart-realm .gmrcart-library{max-width:100%}
+.gmrcart-realm .gmrcart-prefabs{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+@media(min-width:1200px){.gmrcart-realm .gmrcart-canvas-panel{padding:clamp(22px,2.5vw,42px)}}
+@media(max-width:760px){.gmrcart-realm .gmrcart-grid{width:100%}.gmrcart-realm .gmrcart-prefabs{grid-template-columns:repeat(auto-fill,minmax(120px,1fr))}}

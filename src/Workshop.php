@@ -108,7 +108,7 @@ final class Workshop
         ?>
 <style>
 .gmrcart-realm{background:#100d13;color:#f7ead3;font-family:system-ui,-apple-system,Segoe UI,sans-serif;min-height:70vh}
-.gmrcart-realm *{box-sizing:border-box}.gmrcart-shell{max-width:1120px;margin:0 auto;padding:32px 22px 80px}
+.gmrcart-realm *{box-sizing:border-box}.gmrcart-shell{width:min(100%,1760px);max-width:none;margin:0 auto;padding:32px clamp(16px,2.5vw,48px) 80px}
 .gmrcart-top{display:flex;justify-content:space-between;align-items:center;gap:18px;flex-wrap:wrap}
 .gmrcart-top a{color:#f4c980;text-decoration:none}.gmrcart-hero{margin:24px 0 28px;padding:42px 36px;border:1px solid #7b5a34;border-radius:18px;background:linear-gradient(115deg,#2c1b25,#24191c 58%,#48311f);box-shadow:0 20px 60px #0007}
 .gmrcart-kicker{letter-spacing:.16em;text-transform:uppercase;color:#e6b967;font-size:.75rem;font-weight:800}
@@ -123,6 +123,12 @@ final class Workshop
 .gmrcart-list{list-style:none;padding:0;margin:0}.gmrcart-list li{border:1px solid #61472e;background:#34252a;padding:14px;border-radius:9px;margin:0 0 10px}
 .gmrcart-muted{color:#dac5ac;line-height:1.6}.gmrcart-notice{padding:12px;border:1px solid #c79b52;border-radius:8px;margin-bottom:18px}
 @media(max-width:760px){.gmrcart-layout{grid-template-columns:1fr}.gmrcart-hero{padding:28px 22px}}
+/* VI.6: the workshop occupies available space without leaking into other Elementor pages. */
+.gmrcart-realm{width:100%;max-width:none}
+.gmrcart-realm .gmrcart-shell{width:min(100%,1760px);max-width:none}
+.gmrcart-realm .gmrcart-canvas-panel{min-width:0}
+@media(min-width:1100px){.gmrcart-realm .gmrcart-layout{grid-template-columns:minmax(0,1.25fr) minmax(300px,.75fr)}}
+@media(max-width:760px){.gmrcart-realm .gmrcart-shell{padding:20px 12px 48px}}
 </style>
 <main class="gmrcart-realm"><div class="gmrcart-shell">
 <nav class="gmrcart-top" aria-label="<?php echo esc_attr__('Workshop navigation', 'great-marketrealm-cartographer'); ?>">
@@ -192,7 +198,8 @@ final class Workshop
         $config['prefabs'] = PrefabCatalog::items();
         wp_enqueue_style('gmrcart-canvas', plugins_url('assets/canvas.css', dirname(__FILE__)), [], GMRCART_VERSION);
         wp_enqueue_script('gmrcart-canvas', plugins_url('assets/canvas.js', dirname(__FILE__)), [], GMRCART_VERSION, true);
-        wp_enqueue_script('gmrcart-landscape', plugins_url('assets/landscape.js', dirname(__FILE__)), ['gmrcart-canvas'], GMRCART_VERSION, true);
+        wp_enqueue_script('gmrcart-atlas-palettes', plugins_url('assets/atlas-palettes.js', dirname(__FILE__)), [], GMRCART_VERSION, true);
+        wp_enqueue_script('gmrcart-landscape', plugins_url('assets/landscape.js', dirname(__FILE__)), ['gmrcart-canvas', 'gmrcart-atlas-palettes'], GMRCART_VERSION, true);
         wp_add_inline_script('gmrcart-landscape', 'window.gmrcartLandscape = true;', 'before');
         wp_add_inline_script('gmrcart-canvas', 'window.gmrcartScene = ' . wp_json_encode($config) . ';', 'before');
         echo '<section class="gmrcart-panel gmrcart-canvas-panel"><h2>' . esc_html__('Pippin’s construction canvas', 'great-marketrealm-cartographer') . '</h2>';
