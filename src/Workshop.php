@@ -190,6 +190,8 @@ final class Workshop
         ];
         wp_enqueue_style('gmrcart-canvas', plugins_url('assets/canvas.css', dirname(__FILE__)), [], GMRCART_VERSION);
         wp_enqueue_script('gmrcart-canvas', plugins_url('assets/canvas.js', dirname(__FILE__)), [], GMRCART_VERSION, true);
+        wp_enqueue_script('gmrcart-landscape', plugins_url('assets/landscape.js', dirname(__FILE__)), ['gmrcart-canvas'], GMRCART_VERSION, true);
+        wp_add_inline_script('gmrcart-landscape', 'window.gmrcartLandscape = true;', 'before');
         wp_add_inline_script('gmrcart-canvas', 'window.gmrcartScene = ' . wp_json_encode($config) . ';', 'before');
         echo '<section class="gmrcart-panel gmrcart-canvas-panel"><h2>' . esc_html__('Pippin’s construction canvas', 'great-marketrealm-cartographer') . '</h2>';
         echo '<p class="gmrcart-muted">' . esc_html__('Choose a material, then click or drag across the grid. Save to keep your work.', 'great-marketrealm-cartographer') . '</p>';
@@ -197,7 +199,8 @@ final class Workshop
         foreach (['floor'=>__('Ground', 'great-marketrealm-cartographer'), 'wall'=>__('Wall', 'great-marketrealm-cartographer'), 'water'=>__('Water', 'great-marketrealm-cartographer'), 'tree'=>__('Tree', 'great-marketrealm-cartographer'), 'erase'=>__('Erase', 'great-marketrealm-cartographer')] as $key=>$label) {
             echo '<button type="button" class="gmrcart-tool" data-material="' . esc_attr($key) . '" aria-pressed="' . ($key === 'floor' ? 'true' : 'false') . '">' . esc_html($label) . '</button>';
         }
-        echo '</div><div class="gmrcart-grid" role="grid" aria-label="Editable construction grid"></div>';
+        echo '</div><button type="button" class="gmrcart-view-toggle" aria-pressed="false">' . esc_html__('View illustrated landscape', 'great-marketrealm-cartographer') . '</button>';
+        echo '<div class="gmrcart-grid" role="grid" aria-label="Editable construction grid"></div><svg class="gmrcart-landscape" hidden xmlns="http://www.w3.org/2000/svg"></svg>';
         echo '<div class="gmrcart-canvas-actions"><button type="button" class="gmrcart-button gmrcart-save">' . esc_html__('Save construction', 'great-marketrealm-cartographer') . '</button><span class="gmrcart-save-status" role="status" aria-live="polite"></span></div></section>';
     }
 
