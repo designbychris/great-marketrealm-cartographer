@@ -10,3 +10,9 @@
 .gmrcart-canvas-panel .gmrcart-landscape-frame svg.gmrcart-landscape{display:block!important;width:100%!important;height:100%!important;min-height:260px;max-width:none!important;aspect-ratio:660/385;border:0;background:transparent;visibility:visible!important}
 
 .gmrcart-library{margin:16px 0;padding:14px;border:1px solid #775b3d;border-radius:9px}.gmrcart-library h3{margin:0 0 8px}.gmrcart-prefabs,.gmrcart-object-actions{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.gmrcart-prefab,.gmrcart-object-actions button{background:#39282a;color:#f5d59b;border:1px solid #9e7849;border-radius:6px;padding:9px 12px;cursor:pointer}.gmrcart-prefab[aria-pressed=true]{background:#d7a34a;color:#1b1311}.gmrcart-object-actions button:disabled{opacity:.45;cursor:not-allowed}.gmrcart-object-status{align-self:center;min-width:170px}.gmrcart-cell[data-object]{outline:2px solid #f3c77a;outline-offset:-3px;box-shadow:inset 0 0 0 6px #b8784b55}.gmrcart-cell.gmrcart-object-selected{outline:3px solid #fff0a3;outline-offset:-4px}
+
+/* VI.5C: non-destructive pointer footprint preview */
+.gmrcart-canvas-panel .gmrcart-cell.gmrcart-ghost{outline:3px solid #9ff1bd;outline-offset:-4px;box-shadow:inset 0 0 0 8px #4ad69b55;z-index:2}
+.gmrcart-canvas-panel .gmrcart-cell.gmrcart-ghost-invalid{outline:3px solid #ff9292;outline-offset:-4px;box-shadow:inset 0 0 0 8px #ed4d4d66;z-index:2}
+.gmrcart-placement-hint{min-height:1.5em;color:#f5d59b;margin:8px 0}
+.gmrcart-object-cancel[hidden]{display:none}
