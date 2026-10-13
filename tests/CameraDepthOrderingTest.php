@@ -13,7 +13,10 @@ final class CameraDepthOrderingTest extends TestCase
         self::assertStringContainsString("kind:mat,x,y,depth:depth(x+.5,y+.5)", $script);
         self::assertStringContainsString("kind:'prefab',object:o,depth:front", $script);
         self::assertStringContainsString('Math.max(...corners.map(([x,y])=>depth(x,y)))', $script);
-        self::assertStringContainsString('raised.sort((a,b)=>a.depth-b.depth', $script);
+        self::assertStringContainsString('const judgement=judgeOcclusion(raised)', $script);
+        self::assertStringContainsString('raised.splice(0,raised.length,...judgement.ordered)', $script);
+        self::assertStringContainsString('function painterCompare(a,b)', $script);
+        self::assertStringNotContainsString('raised.sort((a,b)=>a.depth-b.depth', $script);
         self::assertStringContainsString('raised.forEach(item=>{', $script);
         self::assertStringNotContainsString('objects.sort(', $script);
     }
