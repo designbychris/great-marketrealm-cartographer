@@ -196,10 +196,12 @@ final class Workshop
         ];
         require_once __DIR__ . '/PrefabCatalog.php';
         $config['prefabs'] = PrefabCatalog::items();
+        $config['atlasAssetBase'] = plugins_url('assets/sprites/', dirname(__FILE__));
         wp_enqueue_style('gmrcart-canvas', plugins_url('assets/canvas.css', dirname(__FILE__)), [], GMRCART_VERSION);
         wp_enqueue_script('gmrcart-canvas', plugins_url('assets/canvas.js', dirname(__FILE__)), [], GMRCART_VERSION, true);
         wp_enqueue_script('gmrcart-atlas-palettes', plugins_url('assets/atlas-palettes.js', dirname(__FILE__)), [], GMRCART_VERSION, true);
-        wp_enqueue_script('gmrcart-landscape', plugins_url('assets/landscape.js', dirname(__FILE__)), ['gmrcart-canvas', 'gmrcart-atlas-palettes'], GMRCART_VERSION, true);
+        wp_enqueue_script('gmrcart-atlas-assets', plugins_url('assets/atlas-assets.js', dirname(__FILE__)), [], GMRCART_VERSION, true);
+        wp_enqueue_script('gmrcart-landscape', plugins_url('assets/landscape.js', dirname(__FILE__)), ['gmrcart-canvas', 'gmrcart-atlas-palettes', 'gmrcart-atlas-assets'], GMRCART_VERSION, true);
         wp_add_inline_script('gmrcart-landscape', 'window.gmrcartLandscape = true;', 'before');
         wp_add_inline_script('gmrcart-canvas', 'window.gmrcartScene = ' . wp_json_encode($config) . ';', 'before');
         echo '<section class="gmrcart-panel gmrcart-canvas-panel"><h2>' . esc_html__('Pippin’s construction canvas', 'great-marketrealm-cartographer') . '</h2>';
@@ -218,6 +220,8 @@ final class Workshop
         }
         echo '</div><div class="gmrcart-placement-hint" role="status" aria-live="polite">Choose a building to preview its footprint on the grid.</div><div class="gmrcart-object-actions"><span class="gmrcart-object-status" role="status" aria-live="polite">' . esc_html__('No structure selected', 'great-marketrealm-cartographer') . '</span><button type="button" class="gmrcart-object-cancel" hidden>Cancel placement</button><button type="button" class="gmrcart-object-rotate" disabled>' . esc_html__('Rotate', 'great-marketrealm-cartographer') . '</button><button type="button" class="gmrcart-object-move" disabled>' . esc_html__('Move', 'great-marketrealm-cartographer') . '</button><button type="button" class="gmrcart-object-remove" disabled>' . esc_html__('Remove', 'great-marketrealm-cartographer') . '</button></div></div><button type="button" class="gmrcart-view-toggle" aria-pressed="false">' . esc_html__('View illustrated landscape', 'great-marketrealm-cartographer') . '</button>';
         echo '<div class="gmrcart-camera-controls" role="group" aria-label="Illustrated landscape camera" hidden><button type="button" data-gmrcart-camera="left" disabled>↶ Rotate left</button><output class="gmrcart-camera-angle" aria-live="polite">South-east · 0°</output><button type="button" data-gmrcart-camera="right" disabled>Rotate right ↷</button></div>';
+        echo '<style>.gmrcart-atlas-style{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}.gmrcart-atlas-style[hidden]{display:none!important}.gmrcart-atlas-style button{background:#34252a;color:#f4c980;border:1px solid #98724a;border-radius:7px;padding:9px 14px;cursor:pointer}.gmrcart-atlas-style button[aria-pressed="true"]{background:#d6a44f;color:#24151b}</style>';
+        echo '<div class="gmrcart-atlas-style" role="group" aria-label="Illustration style" hidden><button type="button" data-gmrcart-style="classic" aria-pressed="true">Classic illustration</button><button type="button" data-gmrcart-style="pixel" aria-pressed="false">Pixel-inspired art</button></div>';
         echo '<div class="gmrcart-grid" role="grid" aria-label="Editable construction grid"></div><div class="gmrcart-landscape-frame" hidden><svg class="gmrcart-landscape" xmlns="http://www.w3.org/2000/svg" width="660" height="385" viewBox="0 0 660 385" role="img" aria-label="Isometric construction landscape"></svg></div>';
         echo '<div class="gmrcart-canvas-actions"><button type="button" class="gmrcart-button gmrcart-save">' . esc_html__('Save construction', 'great-marketrealm-cartographer') . '</button><span class="gmrcart-save-status" role="status" aria-live="polite"></span></div></section>';
     }
