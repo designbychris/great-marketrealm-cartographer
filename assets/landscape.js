@@ -4,9 +4,10 @@ const source=window.gmrcartLandscape,grid=root.querySelector('.gmrcart-grid'),pr
 const ns='http://www.w3.org/2000/svg',W=12,H=12,tw=48,th=24,origin=330;
 let active=false,queued=false,orientation=0,illustrationStyle='classic';
 const styleControls=root.querySelector('.gmrcart-atlas-style');
+const illustrationToolbar=root.querySelector('.gmrcart-illustration-toolbar');
 const assetLibrary=window.gmrcartAtlasAssets;
 const assetBase=window.gmrcartScene?.atlasAssetBase||'';
-function sprite(name,x,y,width,height){if(illustrationStyle!=='pixel'||!assetLibrary||!assetBase)return false;const path=assetLibrary.resolve('marketrealm',name);if(!path)return false;node('image',{href:assetBase.replace(/\/$/,'')+'/'+path,x,y,width,height,preserveAspectRatio:'none',style:'image-rendering:pixelated'});return true;}
+function sprite(name,x,y,width,height){if(illustrationStyle!=='pixel'||!assetLibrary||!assetBase)return false;const path=assetLibrary.resolve('marketrealm',name);if(!path)return false;node('image',{href:assetBase.replace(/\/$/,'')+'/'+path,x,y,width,height,preserveAspectRatio:'xMidYMax meet',style:'image-rendering:pixelated'});return true;}
 styleControls?.querySelectorAll('[data-gmrcart-style]').forEach(button=>button.addEventListener('click',()=>{illustrationStyle=button.dataset.gmrcartStyle;styleControls.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));schedule();}));
 const angleLabel=root.querySelector('.gmrcart-camera-angle');
 const cameraButtons=root.querySelectorAll('[data-gmrcart-camera]');
@@ -29,7 +30,13 @@ function buildingDetails(o,w,h,top){const cx=o.x+w/2,cy=o.y+h/2;const isTower=o.
  if(!isMarket){const door=point(cx,o.y+h,top-5);node('ellipse',{cx:door[0],cy:door[1]+4,rx:7,ry:3,fill:'#382c29',opacity:.4});polygon([[door[0]-4,door[1]],[door[0]+4,door[1]+2],[door[0]+4,door[1]-10],[door[0]-4,door[1]-12]],'#51382c','#35271e');node('circle',{cx:door[0]+2,cy:door[1]-5,r:.9,fill:'#f5ce78'});}
  for(const shift of [-.28,.28]){const p=point(cx+w*shift,o.y+h,top-7);polygon([[p[0]-4,p[1]-8],[p[0]+4,p[1]-6],[p[0]+4,p[1]+1],[p[0]-4,p[1]-1]],'#f6c875','#5c4030');line([p[0],p[1]-8],[p[0],p[1]],'#65483a',.9);}
  const roofCenter=point(cx,cy,top+19);if(!isMarket){line([roofCenter[0]-14,roofCenter[1]-2],[roofCenter[0]+10,roofCenter[1]+10],'#e4aa7e',1.3,.8);}
- if(o.type==='cottage'||o.type==='tavern'||o.type==='blacksmith'){const chimney=point(o.x+w*.28,o.y+h*.26,top+25);polygon([[chimney[0]-4,chimney[1]+3],[chimney[0]+1,chimney[1]+5],[chimney[0]+1,chimney[1]-10],[chimney[0]-4,chimney[1]-12]],'#89736c','#453a3a');node('ellipse',{cx:chimney[0]-2,cy:chimney[1]-12,rx:3,ry:1.6,fill:'#39353c'});}
+ if(o.type==='cottage'||o.type==='tavern'||o.type==='blacksmith'){
+ // Keep the stack anchored to the visible roof plane, not to an elevated world point.
+ // The previous excessive height offset made chimneys float above the roof at every camera angle.
+ const anchor=point(cx,cy,top+9);
+ polygon([[anchor[0]-3,anchor[1]+3],[anchor[0]+3,anchor[1]+5],[anchor[0]+3,anchor[1]-9],[anchor[0]-3,anchor[1]-11]],'#89736c','#453a3a');
+ node('ellipse',{cx:anchor[0],cy:anchor[1]-10,rx:3.5,ry:1.5,fill:'#39353c'});
+ }
 }
 function draw(){if(!active)return;preview.replaceChildren();preview.setAttribute('viewBox','0 0 660 385');preview.setAttribute('role','img');preview.setAttribute('aria-label',`Isometric preview of the current construction scene, ${cameraNames[orientation]} view`);
 const tiles=Array.from(grid.querySelectorAll('.gmrcart-cell'));
@@ -48,6 +55,6 @@ else{polygon([a,d,point(o.x,o.y+h,top),point(o.x,o.y,top)],'#cbb38a');polygon([d
 }
 function schedule(){if(queued)return;queued=true;requestAnimationFrame(()=>{queued=false;draw();});}
 cameraButtons.forEach(button=>button.addEventListener('click',()=>{orientation=(orientation+(button.dataset.gmrcartCamera==='left'?3:1))%4;angleLabel.textContent=`${cameraNames[orientation]} · ${orientation*90}°`;cameraButtons.forEach(b=>b.disabled=!active);schedule();}));
-toggle.addEventListener('click',()=>{active=!active;preview.hidden=!active;frame.hidden=!active;frame.style.display=active?'block':'none';grid.hidden=active;toggle.setAttribute('aria-pressed',String(active));toggle.textContent=active?'Return to editable grid':'View illustrated landscape';root.querySelector('.gmrcart-camera-controls').hidden=!active;if(styleControls)styleControls.hidden=!active;cameraButtons.forEach(b=>b.disabled=!active);schedule();});
+toggle.addEventListener('click',()=>{active=!active;preview.hidden=!active;frame.hidden=!active;frame.style.display=active?'block':'none';grid.hidden=active;toggle.setAttribute('aria-pressed',String(active));toggle.textContent=active?'Return to editable grid':'View illustrated landscape';root.querySelector('.gmrcart-camera-controls').hidden=!active;if(illustrationToolbar)illustrationToolbar.hidden=!active;if(styleControls)styleControls.hidden=!active;cameraButtons.forEach(b=>b.disabled=!active);schedule();});
 root.addEventListener('gmrcart:objects-changed',schedule);grid.addEventListener('pointerdown',schedule);grid.addEventListener('pointermove',e=>{if(e.buttons)schedule();});grid.addEventListener('click',schedule);
 })();

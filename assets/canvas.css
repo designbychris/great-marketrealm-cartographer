@@ -39,3 +39,14 @@
 .gmrcart-realm .gmrcart-prefabs{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
 @media(min-width:1200px){.gmrcart-realm .gmrcart-canvas-panel{padding:clamp(22px,2.5vw,42px)}}
 @media(max-width:760px){.gmrcart-realm .gmrcart-grid{width:100%}.gmrcart-realm .gmrcart-prefabs{grid-template-columns:repeat(auto-fill,minmax(120px,1fr))}}
+
+/* VI.6B.2: one accessible, responsive illustration toolbar. */
+.gmrcart-canvas-panel .gmrcart-illustration-toolbar{display:flex;align-items:center;justify-content:flex-start;flex-wrap:wrap;gap:10px 24px;margin:12px 0;padding:12px 14px;background:#2c2227;border:1px solid #76573e;border-radius:9px;max-width:1200px;box-sizing:border-box}
+.gmrcart-canvas-panel .gmrcart-illustration-toolbar[hidden]{display:none!important}
+.gmrcart-canvas-panel .gmrcart-illustration-toolbar .gmrcart-camera-controls:not([hidden]),
+.gmrcart-canvas-panel .gmrcart-illustration-toolbar .gmrcart-atlas-style:not([hidden]){display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:0}
+.gmrcart-canvas-panel .gmrcart-atlas-style[hidden]{display:none!important}
+.gmrcart-canvas-panel .gmrcart-atlas-style button{background:#34252a;color:#f4c980;border:1px solid #98724a;border-radius:7px;padding:9px 14px;cursor:pointer}
+.gmrcart-canvas-panel .gmrcart-atlas-style button[aria-pressed="true"]{background:#d6a44f;color:#24151b}
+.gmrcart-canvas-panel .gmrcart-illustration-toolbar button:focus-visible{outline:3px solid #ffe4a4;outline-offset:2px}
+@media(max-width:680px){.gmrcart-canvas-panel .gmrcart-illustration-toolbar{padding:10px;gap:12px}.gmrcart-canvas-panel .gmrcart-camera-angle{min-width:110px}}
