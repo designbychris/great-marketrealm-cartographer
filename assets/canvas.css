@@ -23,3 +23,10 @@
 .gmrcart-prefabs{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:9px}
 .gmrcart-prefab{display:flex;flex-direction:column;gap:5px;text-align:left;min-height:65px}
 .gmrcart-prefab small{opacity:.8}.gmrcart-prefab[hidden]{display:none!important}
+
+/* VI.5E: camera rotates the preview only; saved scene coordinates never change. */
+.gmrcart-canvas-panel .gmrcart-camera-controls:not([hidden]){display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin:10px 0}
+.gmrcart-canvas-panel .gmrcart-camera-controls[hidden]{display:none!important}
+.gmrcart-camera-controls button{background:#392c30;color:#f7dca9;border:1px solid #a07844;border-radius:7px;padding:9px 12px;cursor:pointer}
+.gmrcart-camera-controls button:focus-visible{outline:3px solid #ffe4a4}
+.gmrcart-camera-angle{min-width:155px;text-align:center;color:#f7dca9;font-weight:600}
