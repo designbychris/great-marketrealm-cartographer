@@ -210,7 +210,69 @@ if(depthDebug){
 }
 }
 function schedule(){if(queued)return;queued=true;requestAnimationFrame(()=>{queued=false;draw();});}
-cameraButtons.forEach(button=>button.addEventListener('click',()=>{orientation=(orientation+(button.dataset.gmrcartCamera==='left'?3:1))%4;angleLabel.textContent=`${cameraNames[orientation]} · ${orientation*90}°`;cameraButtons.forEach(b=>b.disabled=!active);schedule();}));
-toggle.addEventListener('click',()=>{active=!active;preview.hidden=!active;frame.hidden=!active;frame.style.display=active?'block':'none';grid.hidden=active;toggle.setAttribute('aria-pressed',String(active));toggle.textContent=active?'Return to editable grid':'View illustrated landscape';root.querySelector('.gmrcart-camera-controls').hidden=!active;if(illustrationToolbar)illustrationToolbar.hidden=!active;if(styleControls)styleControls.hidden=!active;if(debugButton)debugButton.hidden=!active;cameraButtons.forEach(b=>b.disabled=!active);schedule();});
+// VI.6B.8: a gesture changes only the camera; construction coordinates stay untouched.
+// The scene has four authoritative isometric views, so drag previews use a
+// crossfade between rendered views rather than claiming arbitrary 3D angles.
+const reducedMotion=window.matchMedia?.('(prefers-reduced-motion: reduce)');
+let gesture=null,turnToken=0;
+frame.style.touchAction='pan-y';
+frame.style.cursor='grab';
+frame.setAttribute('aria-label','Illustrated landscape. Drag horizontally to rotate between four views.');
+function cameraLabel(){angleLabel.textContent=`${cameraNames[orientation]} · ${orientation*90}°`;}
+function clearTurnLayer(){frame.querySelectorAll('[data-gmrcart-turn-layer]').forEach(layer=>layer.remove());preview.style.opacity='';}
+function turn(delta,animate=true){
+ if(!active||!delta)return;
+ const token=++turnToken;
+ clearTurnLayer();
+ const oldView=animate&&!reducedMotion?.matches?preview.cloneNode(true):null;
+ if(oldView){
+  oldView.removeAttribute('id');oldView.setAttribute('data-gmrcart-turn-layer','');
+  oldView.setAttribute('aria-hidden','true');
+  Object.assign(oldView.style,{position:'absolute',inset:'0',width:'100%',height:'100%',pointerEvents:'none',opacity:'1',transition:'opacity 220ms ease-out'});
+  frame.style.position='relative';frame.appendChild(oldView);
+ }
+ orientation=(orientation+delta%4+4)%4;
+ cameraLabel();
+ // Rendering the new camera immediately avoids modifying scene geometry.
+ draw();
+ if(oldView){
+  preview.style.opacity='0';
+  requestAnimationFrame(()=>{
+   if(token!==turnToken)return;
+   preview.style.transition='opacity 220ms ease-out';
+   preview.style.opacity='1';oldView.style.opacity='0';
+  });
+  oldView.addEventListener('transitionend',()=>{if(token===turnToken){oldView.remove();preview.style.transition='';preview.style.opacity='';}},{once:true});
+  // A transitionend can be omitted if a tab becomes hidden; next turn cleans up.
+ }
+}
+cameraButtons.forEach(button=>button.addEventListener('click',()=>turn(button.dataset.gmrcartCamera==='left'?-1:1)));
+frame.addEventListener('pointerdown',event=>{
+ if(!active||event.button!==0||gesture)return;
+ gesture={id:event.pointerId,x:event.clientX,y:event.clientY,dragging:false};
+});
+frame.addEventListener('pointermove',event=>{
+ if(!gesture||event.pointerId!==gesture.id)return;
+ const dx=event.clientX-gesture.x,dy=event.clientY-gesture.y;
+ if(!gesture.dragging&&Math.abs(dx)>12&&Math.abs(dx)>Math.abs(dy)*1.2){
+  gesture.dragging=true;frame.style.cursor='grabbing';
+  try{frame.setPointerCapture(event.pointerId);}catch(_error){}
+ }
+});
+function finishGesture(event,cancelled){
+ if(!gesture||event.pointerId!==gesture.id)return;
+ const dx=event.clientX-gesture.x,dragging=gesture.dragging;
+ gesture=null;frame.style.cursor='grab';
+ if(frame.hasPointerCapture?.(event.pointerId))frame.releasePointerCapture(event.pointerId);
+ if(!cancelled&&dragging&&Math.abs(dx)>=36){
+  // Dragging right turns the world left, matching a hand turning a model.
+  const steps=Math.min(3,Math.max(1,Math.round(Math.abs(dx)/120)));
+  turn((dx>0?-1:1)*steps);
+ }
+}
+frame.addEventListener('pointerup',event=>finishGesture(event,false));
+frame.addEventListener('pointercancel',event=>finishGesture(event,true));
+frame.addEventListener('lostpointercapture',()=>{gesture=null;frame.style.cursor='grab';});
+toggle.addEventListener('click',()=>{if(active){++turnToken;clearTurnLayer();gesture=null;}active=!active;preview.hidden=!active;frame.hidden=!active;frame.style.display=active?'block':'none';grid.hidden=active;toggle.setAttribute('aria-pressed',String(active));toggle.textContent=active?'Return to editable grid':'View illustrated landscape';root.querySelector('.gmrcart-camera-controls').hidden=!active;if(illustrationToolbar)illustrationToolbar.hidden=!active;if(styleControls)styleControls.hidden=!active;if(debugButton)debugButton.hidden=!active;cameraButtons.forEach(b=>b.disabled=!active);schedule();});
 root.addEventListener('gmrcart:objects-changed',schedule);grid.addEventListener('pointerdown',schedule);grid.addEventListener('pointermove',e=>{if(e.buttons)schedule();});grid.addEventListener('click',schedule);
 })();
