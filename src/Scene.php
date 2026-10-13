@@ -9,7 +9,7 @@ final class Scene
     public const WIDTH = 12;
     public const HEIGHT = 12;
     public const MATERIALS = ['empty', 'floor', 'wall', 'water', 'tree'];
-    public const PREFABS = ['cottage'=>[2,2], 'tavern'=>[3,2], 'chamber'=>[3,3]];
+    public const PREFABS = ['cottage'=>[2,2], 'tavern'=>[3,2], 'chamber'=>[3,3], 'blacksmith'=>[3,2], 'tower'=>[2,2], 'corridor'=>[1,3], 'crypt'=>[3,3], 'market'=>[3,2]];
 
     public static function canEdit(int $id, int $user): bool
     {

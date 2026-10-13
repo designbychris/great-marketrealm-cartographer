@@ -15,9 +15,9 @@ if(mat==='wall'){const rise=13;polygon([point(x,y,rise),point(x+1,y,rise),point(
 if(mat==='tree'){node('ellipse',{cx:center[0]+3,cy:center[1]+6,rx:12,ry:5,fill:'#2c352c',opacity:.4});node('path',{d:`M${center[0]} ${center[1]+4}v-17`,stroke:'#5d3a29','stroke-width':4});node('circle',{cx:center[0]-5,cy:center[1]-15,r:10,fill:'#315b40'});node('circle',{cx:center[0]+5,cy:center[1]-18,r:11,fill:'#4e8555'});node('circle',{cx:center[0],cy:center[1]-24,r:9,fill:'#70a467'});}
 }
 const objects=window.gmrcartObjects?.()||[];
-objects.sort((a,b)=>(a.x+a.y)-(b.x+b.y)).forEach(o=>{let [w,h]=({cottage:[2,2],tavern:[3,2],chamber:[3,3]})[o.type]||[1,1];if(o.rotation%180)[w,h]=[h,w];const a=point(o.x,o.y,0),b=point(o.x+w,o.y,0),c=point(o.x+w,o.y+h,0),d=point(o.x,o.y+h,0),top=22;
-polygon([a,b,c,d],o.type==='chamber'?'#8c8984':'#b29c77');
-if(o.type==='chamber'){polygon([point(o.x,o.y,12),point(o.x+w,o.y,12),point(o.x+w,o.y+h,12),point(o.x,o.y+h,12)],'#b2ada4');polygon([b,c,point(o.x+w,o.y+h,12),point(o.x+w,o.y,12)],'#716a65');}
+objects.sort((a,b)=>(a.x+a.y)-(b.x+b.y)).forEach(o=>{let [w,h]=(window.gmrcartScene?.prefabs?.[o.type]?.size)||[1,1];if(o.rotation%180)[w,h]=[h,w];const a=point(o.x,o.y,0),b=point(o.x+w,o.y,0),c=point(o.x+w,o.y+h,0),d=point(o.x,o.y+h,0),top=22;
+polygon([a,b,c,d],['chamber','crypt','corridor'].includes(o.type)?'#8c8984':'#b29c77');
+if(['chamber','crypt','corridor'].includes(o.type)){polygon([point(o.x,o.y,12),point(o.x+w,o.y,12),point(o.x+w,o.y+h,12),point(o.x,o.y+h,12)],'#b2ada4');polygon([b,c,point(o.x+w,o.y+h,12),point(o.x+w,o.y,12)],'#716a65');}
 else{polygon([a,d,point(o.x,o.y+h,top),point(o.x,o.y,top)],'#cbb38a');polygon([d,c,point(o.x+w,o.y+h,top),point(o.x,o.y+h,top)],'#94775c');const ridge1=point(o.x+w/2,o.y,top+18),ridge2=point(o.x+w/2,o.y+h,top+18);polygon([point(o.x,o.y,top),ridge1,ridge2,point(o.x,o.y+h,top)],o.type==='tavern'?'#835044':'#955e48');polygon([ridge1,point(o.x+w,o.y,top),point(o.x+w,o.y+h,top),ridge2],o.type==='tavern'?'#a76a51':'#bd7959');}
 });
 }

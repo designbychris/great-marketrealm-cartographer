@@ -16,3 +16,10 @@
 .gmrcart-canvas-panel .gmrcart-cell.gmrcart-ghost-invalid{outline:3px solid #ff9292;outline-offset:-4px;box-shadow:inset 0 0 0 8px #ed4d4d66;z-index:2}
 .gmrcart-placement-hint{min-height:1.5em;color:#f5d59b;margin:8px 0}
 .gmrcart-object-cancel[hidden]{display:none}
+
+/* VI.5D: browsable, data-driven construction catalogue. */
+.gmrcart-library-filters{display:flex;flex-wrap:wrap;align-items:center;gap:9px;margin:12px 0}
+.gmrcart-library-filters input,.gmrcart-library-filters select{background:#211a20;color:#f7dbac;border:1px solid #99764d;border-radius:6px;padding:9px;max-width:100%}
+.gmrcart-prefabs{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:9px}
+.gmrcart-prefab{display:flex;flex-direction:column;gap:5px;text-align:left;min-height:65px}
+.gmrcart-prefab small{opacity:.8}.gmrcart-prefab[hidden]{display:none!important}
