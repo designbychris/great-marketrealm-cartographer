@@ -62,7 +62,14 @@ objects.forEach((o,index)=>{
  if(o.rotation%180)[w,h]=[h,w];
  const corners=[[o.x,o.y],[o.x+w,o.y],[o.x+w,o.y+h],[o.x,o.y+h]];
  const front=Math.max(...corners.map(([x,y])=>depth(x,y)));
- raised.push({kind:'prefab',object:o,depth:front,tie:1,index});
+ // VI.6B.6: Break illustrated structures into paintable silhouette surfaces.
+ // Each surface retains the original prefab footprint and immutable scene object.
+ // Local order is base -> roof -> details, while unrelated raised items can
+ // interleave when their camera depth demands it.
+ const base={kind:'prefab-surface',surface:'base',object:o,depth:front-.6,tie:1,index};
+ const roof={...base,surface:'roof',depth:front-.3,tie:2};
+ const details={...base,surface:'details',depth:front,tie:3};
+ raised.push(base,roof,details);
 });
 // VI.6B.5: Occlusion judgement is camera-relative, derived from ground footprints.
 // A strict dependency exists only when one footprint is entirely behind another
@@ -93,11 +100,23 @@ function judgeOcclusion(items){
  const footprints=items.map(footprint),bounds=items.map(projectedBounds);
  const edges=items.map(()=>[]),incoming=items.map(()=>0),conflicts=[];
  for(let i=0;i<items.length;i++)for(let j=i+1;j<items.length;j++){
+  if(items[i].object&&items[i].object===items[j].object)continue;
   if(!overlap(bounds[i],bounds[j]))continue;
   const ij=strictBehind(footprints[i],footprints[j]),ji=strictBehind(footprints[j],footprints[i]);
   if(ij&&!ji){edges[i].push(j);incoming[j]++;}
   else if(ji&&!ij){edges[j].push(i);incoming[i]++;}
   else conflicts.push([i,j]);
+ }
+ // Preserve the construction order of each building's own surfaces.
+ // These dependencies are acyclic and do not alter other scene objects.
+ for(let i=0;i<items.length;i++){
+  const a=items[i];if(a.kind!=='prefab-surface')continue;
+  for(let j=0;j<items.length;j++){
+   const b=items[j];if(i===j||b.kind!=='prefab-surface'||a.object!==b.object)continue;
+   if((a.surface==='base'&&b.surface==='roof')||(a.surface==='roof'&&b.surface==='details')){
+    if(!edges[i].includes(j)){edges[i].push(j);incoming[j]++;}
+   }
+  }
  }
  const pending=new Set(items.map((_,i)=>i)),result=[];
  while(pending.size){
@@ -122,10 +141,19 @@ if(mat==='tree'&&!sprite('tree',center[0]-16,center[1]-49,32,57)){node('ellipse'
   return;
  }
  const o=item.object;
-let [w,h]=(window.gmrcartScene?.prefabs?.[o.type]?.size)||[1,1];if(o.rotation%180)[w,h]=[h,w];const a=point(o.x,o.y,0),b=point(o.x+w,o.y,0),c=point(o.x+w,o.y+h,0),d=point(o.x,o.y+h,0),top=22;
-polygon([a,b,c,d],['chamber','crypt','corridor'].includes(o.type)?'#8c8984':'#b29c77');
-if(['chamber','crypt','corridor'].includes(o.type)){polygon([point(o.x,o.y,12),point(o.x+w,o.y,12),point(o.x+w,o.y+h,12),point(o.x,o.y+h,12)],atlas.stone);polygon([b,c,point(o.x+w,o.y+h,12),point(o.x+w,o.y,12)],'#716a65');}
-else{polygon([a,d,point(o.x,o.y+h,top),point(o.x,o.y,top)],'#cbb38a');polygon([d,c,point(o.x+w,o.y+h,top),point(o.x,o.y+h,top)],'#94775c');const ridge1=point(o.x+w/2,o.y,top+18),ridge2=point(o.x+w/2,o.y+h,top+18);polygon([point(o.x,o.y,top),ridge1,ridge2,point(o.x,o.y+h,top)],o.type==='tavern'?'#835044':atlas.roofShade);polygon([ridge1,point(o.x+w,o.y,top),point(o.x+w,o.y+h,top),ridge2],o.type==='tavern'?'#a76a51':atlas.roof);buildingDetails(o,w,h,top);}
+let [w,h]=(window.gmrcartScene?.prefabs?.[o.type]?.size)||[1,1];if(o.rotation%180)[w,h]=[h,w];
+const a=point(o.x,o.y,0),b=point(o.x+w,o.y,0),c=point(o.x+w,o.y+h,0),d=point(o.x,o.y+h,0),top=22;
+const stone=['chamber','crypt','corridor'].includes(o.type);
+if(item.surface==='base'){
+ polygon([a,b,c,d],stone?'#8c8984':'#b29c77');
+ if(stone){polygon([b,c,point(o.x+w,o.y+h,12),point(o.x+w,o.y,12)],'#716a65');}
+ else{polygon([a,d,point(o.x,o.y+h,top),point(o.x,o.y,top)],'#cbb38a');polygon([d,c,point(o.x+w,o.y+h,top),point(o.x,o.y+h,top)],'#94775c');}
+}
+if(item.surface==='roof'){
+ if(stone){polygon([point(o.x,o.y,12),point(o.x+w,o.y,12),point(o.x+w,o.y+h,12),point(o.x,o.y+h,12)],atlas.stone);}
+ else{const ridge1=point(o.x+w/2,o.y,top+18),ridge2=point(o.x+w/2,o.y+h,top+18);polygon([point(o.x,o.y,top),ridge1,ridge2,point(o.x,o.y+h,top)],o.type==='tavern'?'#835044':atlas.roofShade);polygon([ridge1,point(o.x+w,o.y,top),point(o.x+w,o.y+h,top),ridge2],o.type==='tavern'?'#a76a51':atlas.roof);}
+}
+if(item.surface==='details'&&!stone)buildingDetails(o,w,h,top);
 
 });
 if(depthDebug){
@@ -135,6 +163,7 @@ if(depthDebug){
  status.textContent=`Occlusion audit: ${judgement.conflicts.length} ambiguous overlap pairs`;
 
  debugEntries.forEach(({item,index})=>{
+  if(item.kind==='prefab-surface'&&item.surface!=='roof')return;
   const o=item.object, x=o?o.x:item.x, y=o?o.y:item.y;
   let w=1,h=1;
   if(o){[w,h]=(window.gmrcartScene?.prefabs?.[o.type]?.size)||[1,1];if(o.rotation%180)[w,h]=[h,w];}
@@ -143,7 +172,7 @@ if(depthDebug){
   const anchor=point(x+w/2,y+h/2);
   node('circle',{cx:anchor[0],cy:anchor[1],r:3,fill:'#fff0a6',stroke:'#271b25','stroke-width':1},overlay);
   const label=node('text',{x:anchor[0]+5,y:anchor[1]-5,fill:'#fff5ce','font-size':8,stroke:'#241b23','stroke-width':2,'paint-order':'stroke'},overlay);
-  label.textContent=`${index+1} ${o?o.type:item.kind} (${Math.round(item.depth*10)/10})`;
+  label.textContent=`${index+1} ${o?o.type+'/'+item.surface:item.kind} (${Math.round(item.depth*10)/10})`;
  });
 }
 }
