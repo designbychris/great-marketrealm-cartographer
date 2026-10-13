@@ -50,3 +50,13 @@
 .gmrcart-canvas-panel .gmrcart-atlas-style button[aria-pressed="true"]{background:#d6a44f;color:#24151b}
 .gmrcart-canvas-panel .gmrcart-illustration-toolbar button:focus-visible{outline:3px solid #ffe4a4;outline-offset:2px}
 @media(max-width:680px){.gmrcart-canvas-panel .gmrcart-illustration-toolbar{padding:10px;gap:12px}.gmrcart-canvas-panel .gmrcart-camera-angle{min-width:110px}}
+
+/* VI.6B.4: dedicated, full-width editor and opt-in depth diagnostics. */
+.gmrcart-studio .gmrcart-shell{width:min(100%,1760px)}
+.gmrcart-studio-heading{margin:20px 0 12px}
+.gmrcart-studio-heading h1{font:700 clamp(1.5rem,3vw,2.5rem) Georgia,serif;color:#f9db9f;margin:0 0 4px}
+.gmrcart-studio .gmrcart-canvas-panel{margin-top:14px}
+.gmrcart-studio .gmrcart-landscape-frame{width:100%;max-width:1450px}
+.gmrcart-depth-toggle{background:#34252a;color:#f4c980;border:1px solid #98724a;border-radius:7px;padding:9px 14px;cursor:pointer}
+.gmrcart-depth-toggle[aria-pressed="true"]{background:#d6a44f;color:#24151b}
+.gmrcart-depth-toggle[hidden]{display:none!important}

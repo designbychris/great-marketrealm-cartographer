@@ -2,13 +2,15 @@
 const root=document.querySelector('.gmrcart-canvas-panel');if(!root||!window.gmrcartLandscape)return;
 const source=window.gmrcartLandscape,grid=root.querySelector('.gmrcart-grid'),preview=root.querySelector('.gmrcart-landscape'),frame=root.querySelector('.gmrcart-landscape-frame'),toggle=root.querySelector('.gmrcart-view-toggle');
 const ns='http://www.w3.org/2000/svg',W=12,H=12,tw=48,th=24,origin=330;
-let active=false,queued=false,orientation=0,illustrationStyle='classic';
+let active=false,queued=false,orientation=0,illustrationStyle='classic',depthDebug=false;
 const styleControls=root.querySelector('.gmrcart-atlas-style');
 const illustrationToolbar=root.querySelector('.gmrcart-illustration-toolbar');
 const assetLibrary=window.gmrcartAtlasAssets;
 const assetBase=window.gmrcartScene?.atlasAssetBase||'';
 function sprite(name,x,y,width,height){if(illustrationStyle!=='pixel'||!assetLibrary||!assetBase)return false;const path=assetLibrary.resolve('marketrealm',name);if(!path)return false;node('image',{href:assetBase.replace(/\/$/,'')+'/'+path,x,y,width,height,preserveAspectRatio:'xMidYMax meet',style:'image-rendering:pixelated'});return true;}
 styleControls?.querySelectorAll('[data-gmrcart-style]').forEach(button=>button.addEventListener('click',()=>{illustrationStyle=button.dataset.gmrcartStyle;styleControls.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));schedule();}));
+const debugButton=root.querySelector('.gmrcart-depth-toggle');
+debugButton?.addEventListener('click',()=>{depthDebug=!depthDebug;debugButton.setAttribute('aria-pressed',String(depthDebug));debugButton.textContent=depthDebug?'Hide depth guides':'Show depth guides';schedule();});
 const angleLabel=root.querySelector('.gmrcart-camera-angle');
 const cameraButtons=root.querySelectorAll('[data-gmrcart-camera]');
 const cameraNames=['South-east','South-west','North-west','North-east'];
@@ -63,6 +65,8 @@ objects.forEach((o,index)=>{
  raised.push({kind:'prefab',object:o,depth:front,tie:1,index});
 });
 raised.sort((a,b)=>a.depth-b.depth||a.tie-b.tie||(a.y??0)-(b.y??0)||(a.x??0)-(b.x??0)||(a.index??0)-(b.index??0));
+// Diagnostic overlay is drawn last and never enters scene persistence.
+const debugEntries=raised.map((item,index)=>({item,index}));
 raised.forEach(item=>{
  if(item.kind==='wall'||item.kind==='tree'){
   const {x,y}=item,mat=item.kind;
@@ -78,9 +82,23 @@ if(['chamber','crypt','corridor'].includes(o.type)){polygon([point(o.x,o.y,12),p
 else{polygon([a,d,point(o.x,o.y+h,top),point(o.x,o.y,top)],'#cbb38a');polygon([d,c,point(o.x+w,o.y+h,top),point(o.x,o.y+h,top)],'#94775c');const ridge1=point(o.x+w/2,o.y,top+18),ridge2=point(o.x+w/2,o.y+h,top+18);polygon([point(o.x,o.y,top),ridge1,ridge2,point(o.x,o.y+h,top)],o.type==='tavern'?'#835044':atlas.roofShade);polygon([ridge1,point(o.x+w,o.y,top),point(o.x+w,o.y+h,top),ridge2],o.type==='tavern'?'#a76a51':atlas.roof);buildingDetails(o,w,h,top);}
 
 });
+if(depthDebug){
+ const overlay=node('g',{'data-gmrcart-depth-debug':'true','pointer-events':'none'});
+ debugEntries.forEach(({item,index})=>{
+  const o=item.object, x=o?o.x:item.x, y=o?o.y:item.y;
+  let w=1,h=1;
+  if(o){[w,h]=(window.gmrcartScene?.prefabs?.[o.type]?.size)||[1,1];if(o.rotation%180)[w,h]=[h,w];}
+  const corners=[point(x,y),point(x+w,y),point(x+w,y+h),point(x,y+h)];
+  polygon(corners,'none',o?'#ffd274':item.kind==='tree'?'#85f4b5':'#ff9eae',overlay);
+  const anchor=point(x+w/2,y+h/2);
+  node('circle',{cx:anchor[0],cy:anchor[1],r:3,fill:'#fff0a6',stroke:'#271b25','stroke-width':1},overlay);
+  const label=node('text',{x:anchor[0]+5,y:anchor[1]-5,fill:'#fff5ce','font-size':8,stroke:'#241b23','stroke-width':2,'paint-order':'stroke'},overlay);
+  label.textContent=`${index+1} ${o?o.type:item.kind} (${Math.round(item.depth*10)/10})`;
+ });
+}
 }
 function schedule(){if(queued)return;queued=true;requestAnimationFrame(()=>{queued=false;draw();});}
 cameraButtons.forEach(button=>button.addEventListener('click',()=>{orientation=(orientation+(button.dataset.gmrcartCamera==='left'?3:1))%4;angleLabel.textContent=`${cameraNames[orientation]} · ${orientation*90}°`;cameraButtons.forEach(b=>b.disabled=!active);schedule();}));
-toggle.addEventListener('click',()=>{active=!active;preview.hidden=!active;frame.hidden=!active;frame.style.display=active?'block':'none';grid.hidden=active;toggle.setAttribute('aria-pressed',String(active));toggle.textContent=active?'Return to editable grid':'View illustrated landscape';root.querySelector('.gmrcart-camera-controls').hidden=!active;if(illustrationToolbar)illustrationToolbar.hidden=!active;if(styleControls)styleControls.hidden=!active;cameraButtons.forEach(b=>b.disabled=!active);schedule();});
+toggle.addEventListener('click',()=>{active=!active;preview.hidden=!active;frame.hidden=!active;frame.style.display=active?'block':'none';grid.hidden=active;toggle.setAttribute('aria-pressed',String(active));toggle.textContent=active?'Return to editable grid':'View illustrated landscape';root.querySelector('.gmrcart-camera-controls').hidden=!active;if(illustrationToolbar)illustrationToolbar.hidden=!active;if(styleControls)styleControls.hidden=!active;if(debugButton)debugButton.hidden=!active;cameraButtons.forEach(b=>b.disabled=!active);schedule();});
 root.addEventListener('gmrcart:objects-changed',schedule);grid.addEventListener('pointerdown',schedule);grid.addEventListener('pointermove',e=>{if(e.buttons)schedule();});grid.addEventListener('click',schedule);
 })();

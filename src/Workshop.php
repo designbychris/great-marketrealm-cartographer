@@ -23,6 +23,7 @@ final class Workshop
         add_action('admin_post_gmrcart_create_draft', [self::class, 'createDraft']);
         add_action('wp_ajax_gmrcart_save_scene', [Scene::class, 'save']);
         add_shortcode('gmrcart_workshop', [self::class, 'shortcode']);
+        add_shortcode('gmrcart_canvas', [self::class, 'canvasShortcode']);
         add_filter('gmrcart_capabilities', [self::class, 'capabilities']);
     }
 
@@ -106,6 +107,30 @@ final class Workshop
             : home_url('/companion/');
         ob_start();
         ?>
+<?php echo self::sharedStyles(); ?>
+<main class="gmrcart-realm"><div class="gmrcart-shell">
+<nav class="gmrcart-top" aria-label="<?php echo esc_attr__('Workshop navigation', 'great-marketrealm-cartographer'); ?>">
+<strong>✦ <?php echo esc_html__('The Great MarketRealm · Cartographer', 'great-marketrealm-cartographer'); ?></strong>
+<a href="<?php echo esc_url($returnUrl); ?>">← <?php echo esc_html__('Return to Dungeon Master’s Desk', 'great-marketrealm-cartographer'); ?></a>
+</nav>
+<section class="gmrcart-hero">
+<div class="gmrcart-kicker"><?php echo esc_html__('The Keeper’s drafting room', 'great-marketrealm-cartographer'); ?></div>
+<h1><?php echo esc_html__('Cartographer’s Workshop', 'great-marketrealm-cartographer'); ?></h1>
+<p><?php echo esc_html($name !== '' ? $name : __('Choose a campaign and begin a private construction draft.', 'great-marketrealm-cartographer')); ?></p>
+<p><?php echo esc_html__('Shape the foundations of future adventures. Scene building and Tabletop publishing will arrive in later phases.', 'great-marketrealm-cartographer'); ?></p>
+</section>
+<?php self::renderFrontendContent($campaign); ?>
+<?php // The canvas now lives on the dedicated [gmrcart_canvas] page. ?>
+</div></main>
+<?php
+        return (string) ob_get_clean();
+    }
+
+
+    /** Shared visual language, independent of the Elementor page template. */
+    private static function sharedStyles(): string
+    {
+        return <<<'GMRCART_CSS'
 <style>
 .gmrcart-realm{background:#100d13;color:#f7ead3;font-family:system-ui,-apple-system,Segoe UI,sans-serif;min-height:70vh}
 .gmrcart-realm *{box-sizing:border-box}.gmrcart-shell{width:min(100%,1760px);max-width:none;margin:0 auto;padding:32px clamp(16px,2.5vw,48px) 80px}
@@ -130,22 +155,49 @@ final class Workshop
 @media(min-width:1100px){.gmrcart-realm .gmrcart-layout{grid-template-columns:minmax(0,1.25fr) minmax(300px,.75fr)}}
 @media(max-width:760px){.gmrcart-realm .gmrcart-shell{padding:20px 12px 48px}}
 </style>
-<main class="gmrcart-realm"><div class="gmrcart-shell">
-<nav class="gmrcart-top" aria-label="<?php echo esc_attr__('Workshop navigation', 'great-marketrealm-cartographer'); ?>">
-<strong>✦ <?php echo esc_html__('The Great MarketRealm · Cartographer', 'great-marketrealm-cartographer'); ?></strong>
-<a href="<?php echo esc_url($returnUrl); ?>">← <?php echo esc_html__('Return to Dungeon Master’s Desk', 'great-marketrealm-cartographer'); ?></a>
-</nav>
-<section class="gmrcart-hero">
-<div class="gmrcart-kicker"><?php echo esc_html__('The Keeper’s drafting room', 'great-marketrealm-cartographer'); ?></div>
-<h1><?php echo esc_html__('Cartographer’s Workshop', 'great-marketrealm-cartographer'); ?></h1>
-<p><?php echo esc_html($name !== '' ? $name : __('Choose a campaign and begin a private construction draft.', 'great-marketrealm-cartographer')); ?></p>
-<p><?php echo esc_html__('Shape the foundations of future adventures. Scene building and Tabletop publishing will arrive in later phases.', 'great-marketrealm-cartographer'); ?></p>
-</section>
-<?php self::renderFrontendContent($campaign); ?>
-<?php self::renderEditor($campaign); ?>
-</div></main>
-<?php
+GMRCART_CSS;
+    }
+
+    /** Dedicated Studio shortcode: never expose another Keeper's private draft. */
+    public static function canvasShortcode(): string
+    {
+        if (!is_user_logged_in()) {
+            return '<p>' . esc_html__('Please sign in to open the Construction Studio.', 'great-marketrealm-cartographer') . '</p>';
+        }
+        if (!self::canAccess()) {
+            return '<p>' . esc_html__('Studio access denied.', 'great-marketrealm-cartographer') . '</p>';
+        }
+        $draftId = absint($_GET['draft_id'] ?? 0);
+        if ($draftId < 1 || !Scene::canEdit($draftId, get_current_user_id())) {
+            return '<p>' . esc_html__('This construction draft is unavailable.', 'great-marketrealm-cartographer') . '</p>';
+        }
+        $campaign = Drafts::campaignId($draftId);
+        $requestedCampaign = sanitize_text_field((string) wp_unslash($_GET['campaign_id'] ?? ''));
+        if ($requestedCampaign !== '' && $requestedCampaign !== $campaign) {
+            return '<p>' . esc_html__('Campaign access denied.', 'great-marketrealm-cartographer') . '</p>';
+        }
+        $workshopUrl = function_exists('gmrcart_workshop_url')
+            ? gmrcart_workshop_url($campaign)
+            : home_url('/cartographer/');
+        $draft = get_post($draftId);
+        ob_start();
+        echo self::sharedStyles();
+        echo '<main class="gmrcart-realm gmrcart-studio"><div class="gmrcart-shell">';
+        echo '<nav class="gmrcart-top" aria-label="Studio navigation"><a href="' . esc_url($workshopUrl) . '">← ' . esc_html__('Back to drafting tables', 'great-marketrealm-cartographer') . '</a><strong>' . esc_html__('Pippin’s Construction Studio', 'great-marketrealm-cartographer') . '</strong></nav>';
+        echo '<header class="gmrcart-studio-heading"><h1>' . esc_html($draft->post_title) . '</h1><p class="gmrcart-muted">' . esc_html__('Private construction draft', 'great-marketrealm-cartographer') . '</p></header>';
+        self::renderEditor($campaign);
+        echo '</div></main>';
         return (string) ob_get_clean();
+    }
+
+    /** Published Elementor page preferred; fallback preserves older links. */
+    private static function canvasUrl(int $draftId, string $campaign): string
+    {
+        $page = get_page_by_path('cartographer/canvas');
+        $base = $page instanceof \WP_Post && $page->post_status === 'publish'
+            ? get_permalink($page)
+            : (function_exists('gmrcart_workshop_url') ? gmrcart_workshop_url($campaign) : home_url('/cartographer/'));
+        return add_query_arg(['draft_id' => $draftId, 'campaign_id' => $campaign], $base);
     }
 
     private static function renderFrontendContent(string $campaign): void
@@ -160,7 +212,7 @@ final class Workshop
             $draftCampaign = Drafts::campaignId((int) $draft->ID);
             if ($campaign !== '' && $draftCampaign !== $campaign) continue;
             ++$shown;
-            echo '<li><strong>' . esc_html($draft->post_title) . '</strong><div class="gmrcart-muted">' . esc_html($campaigns[$draftCampaign] ?? $draftCampaign) . '</div><a style="color:#f4c980" href="' . esc_url(add_query_arg(['draft_id'=>(int)$draft->ID, 'campaign_id'=>$draftCampaign], remove_query_arg(['created','draft_id']))) . '">' . esc_html__('Open construction canvas', 'great-marketrealm-cartographer') . '</a></li>';
+            echo '<li><strong>' . esc_html($draft->post_title) . '</strong><div class="gmrcart-muted">' . esc_html($campaigns[$draftCampaign] ?? $draftCampaign) . '</div><a style="color:#f4c980" href="' . esc_url(self::canvasUrl((int) $draft->ID, $draftCampaign)) . '">' . esc_html__('Open construction canvas', 'great-marketrealm-cartographer') . '</a></li>';
         }
         if ($shown === 0) echo '<li class="gmrcart-muted">' . esc_html__('No drafting tables yet. Create the first one!', 'great-marketrealm-cartographer') . '</li>';
         echo '</ul></section><section class="gmrcart-panel"><h2>' . esc_html__('New drafting table', 'great-marketrealm-cartographer') . '</h2>';
@@ -221,7 +273,7 @@ final class Workshop
         echo '</div><div class="gmrcart-placement-hint" role="status" aria-live="polite">Choose a building to preview its footprint on the grid.</div><div class="gmrcart-object-actions"><span class="gmrcart-object-status" role="status" aria-live="polite">' . esc_html__('No structure selected', 'great-marketrealm-cartographer') . '</span><button type="button" class="gmrcart-object-cancel" hidden>Cancel placement</button><button type="button" class="gmrcart-object-rotate" disabled>' . esc_html__('Rotate', 'great-marketrealm-cartographer') . '</button><button type="button" class="gmrcart-object-move" disabled>' . esc_html__('Move', 'great-marketrealm-cartographer') . '</button><button type="button" class="gmrcart-object-remove" disabled>' . esc_html__('Remove', 'great-marketrealm-cartographer') . '</button></div></div><button type="button" class="gmrcart-view-toggle" aria-pressed="false">' . esc_html__('View illustrated landscape', 'great-marketrealm-cartographer') . '</button>';
         echo '<div class="gmrcart-illustration-toolbar" hidden><div class="gmrcart-camera-controls" role="group" aria-label="Illustrated landscape camera" hidden><button type="button" data-gmrcart-camera="left" disabled>↶ Rotate left</button><output class="gmrcart-camera-angle" aria-live="polite">South-east · 0°</output><button type="button" data-gmrcart-camera="right" disabled>Rotate right ↷</button></div>';
         
-        echo '<div class="gmrcart-atlas-style" role="group" aria-label="Illustration style" hidden><button type="button" data-gmrcart-style="classic" aria-pressed="true">Classic illustration</button><button type="button" data-gmrcart-style="pixel" aria-pressed="false">Pixel-inspired art</button></div></div>';
+        echo '<div class="gmrcart-atlas-style" role="group" aria-label="Illustration style" hidden><button type="button" data-gmrcart-style="classic" aria-pressed="true">Classic illustration</button><button type="button" data-gmrcart-style="pixel" aria-pressed="false">Pixel-inspired art</button></div><button type="button" class="gmrcart-depth-toggle" aria-pressed="false" hidden>Show depth guides</button></div>';
         echo '<div class="gmrcart-grid" role="grid" aria-label="Editable construction grid"></div><div class="gmrcart-landscape-frame" hidden><svg class="gmrcart-landscape" xmlns="http://www.w3.org/2000/svg" width="660" height="385" viewBox="0 0 660 385" role="img" aria-label="Isometric construction landscape"></svg></div>';
         echo '<div class="gmrcart-canvas-actions"><button type="button" class="gmrcart-button gmrcart-save">' . esc_html__('Save construction', 'great-marketrealm-cartographer') . '</button><span class="gmrcart-save-status" role="status" aria-live="polite"></span></div></section>';
     }
