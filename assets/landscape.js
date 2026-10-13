@@ -82,29 +82,48 @@ function footprint(item){
  const corners=[[x,y],[x+w,y],[x+w,y+h],[x,y+h]].map(([px,py])=>orient(px,py));
  return {u0:Math.min(...corners.map(c=>c[0])),u1:Math.max(...corners.map(c=>c[0])),v0:Math.min(...corners.map(c=>c[1])),v1:Math.max(...corners.map(c=>c[1]))};
 }
+// VI.6B.7: Compare the actual silhouette envelope of each surface, not the
+// full building height for every surface. Ground and roof are separate planes.
+function surfaceHeight(item){
+ if(item.kind==='tree')return [0,49];
+ if(item.kind==='wall')return [0,13];
+ if(item.kind==='prefab-surface'){
+  const stone=['chamber','crypt','corridor'].includes(item.object.type);
+  if(item.surface==='base')return [0,stone?12:22];
+  if(item.surface==='roof')return [stone?12:22,stone?12:40];
+  return [22,stone?22:42];
+ }
+ return [0,0];
+}
 function projectedBounds(item){
- const f=footprint(item), corners=[[f.u0,f.v0],[f.u1,f.v0],[f.u1,f.v1],[f.u0,f.v1]];
+ const f=footprint(item),corners=[[f.u0,f.v0],[f.u1,f.v0],[f.u1,f.v1],[f.u0,f.v1]];
  const sx=corners.map(([u,v])=>origin+(u-v)*tw/2);
  const sy=corners.map(([u,v])=>30+(u+v)*th/2);
- const height=item.kind==='tree'?49:item.kind==='wall'?13:item.kind==='prefab'?40:0;
- return {left:Math.min(...sx),right:Math.max(...sx),top:Math.min(...sy)-height,bottom:Math.max(...sy)};
+ const [bottomZ,topZ]=surfaceHeight(item);
+ return {left:Math.min(...sx),right:Math.max(...sx),top:Math.min(...sy)-topZ,bottom:Math.max(...sy)-bottomZ};
 }
 function overlap(a,b){return a.left<b.right&&b.left<a.right&&a.top<b.bottom&&b.top<a.bottom;}
 function strictBehind(a,b){
- // On the isometric ground plane, either axis establishes an unambiguous
- // behind/in-front relationship when the intervals do not intersect.
  return (a.u1<=b.u0||a.v1<=b.v0)&&!(b.u1<=a.u0||b.v1<=a.v0);
 }
-function painterCompare(a,b){return a.depth-b.depth||a.tie-b.tie||(a.y??0)-(b.y??0)||(a.x??0)-(b.x??0)||(a.index??0)-(b.index??0);}
+// If projected silhouettes overlap but footprints do not establish a strict
+// ordering, a raised object's ground position is the stable camera-relative
+// fallback. Never use the global object insertion order as the depth key.
+function silhouetteDepth(item){
+ const f=footprint(item),[low,high]=surfaceHeight(item);
+ return (f.u1+f.v1)*12-(low+high)*.001;
+}
+function painterCompare(a,b){return silhouetteDepth(a)-silhouetteDepth(b)||a.tie-b.tie||(a.y??0)-(b.y??0)||(a.x??0)-(b.x??0)||(a.index??0)-(b.index??0);}
 function judgeOcclusion(items){
  const footprints=items.map(footprint),bounds=items.map(projectedBounds);
  const edges=items.map(()=>[]),incoming=items.map(()=>0),conflicts=[];
+ const addEdge=(from,to)=>{if(from===to||edges[from].includes(to))return;edges[from].push(to);incoming[to]++;};
  for(let i=0;i<items.length;i++)for(let j=i+1;j<items.length;j++){
   if(items[i].object&&items[i].object===items[j].object)continue;
   if(!overlap(bounds[i],bounds[j]))continue;
   const ij=strictBehind(footprints[i],footprints[j]),ji=strictBehind(footprints[j],footprints[i]);
-  if(ij&&!ji){edges[i].push(j);incoming[j]++;}
-  else if(ji&&!ij){edges[j].push(i);incoming[i]++;}
+  if(ij&&!ji){addEdge(i,j);}
+  else if(ji&&!ij){addEdge(j,i);}
   else conflicts.push([i,j]);
  }
  // Preserve the construction order of each building's own surfaces.
@@ -114,7 +133,7 @@ function judgeOcclusion(items){
   for(let j=0;j<items.length;j++){
    const b=items[j];if(i===j||b.kind!=='prefab-surface'||a.object!==b.object)continue;
    if((a.surface==='base'&&b.surface==='roof')||(a.surface==='roof'&&b.surface==='details')){
-    if(!edges[i].includes(j)){edges[i].push(j);incoming[j]++;}
+    addEdge(i,j);
    }
   }
  }
@@ -122,9 +141,11 @@ function judgeOcclusion(items){
  while(pending.size){
   const ready=Array.from(pending).filter(i=>incoming[i]===0).sort((i,j)=>painterCompare(items[i],items[j])||i-j);
   // Cyclic or genuinely intersecting geometry is intentionally conservative.
+  // In an occlusion cycle, release the lowest-depth surface deterministically.
+  // Only unresolved edges are considered; never corrupt an already painted item.
   const next=ready.length?ready[0]:Array.from(pending).sort((i,j)=>painterCompare(items[i],items[j])||i-j)[0];
   pending.delete(next);result.push(next);
-  for(const target of edges[next])incoming[target]--;
+  for(const target of edges[next])if(pending.has(target))incoming[target]--;
  }
  return {ordered:result.map(i=>items[i]),conflicts,footprints,bounds};
 }
