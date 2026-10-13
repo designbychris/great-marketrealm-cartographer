@@ -117,14 +117,18 @@ function painterCompare(a,b){return silhouetteDepth(a)-silhouetteDepth(b)||a.tie
 function judgeOcclusion(items){
  const footprints=items.map(footprint),bounds=items.map(projectedBounds);
  const edges=items.map(()=>[]),incoming=items.map(()=>0),conflicts=[];
+ // Architectural constraints are authoritative: base -> roof -> details.
+ // Camera ordering is a separate, weaker relationship between objects.
+ const architecturalEdges=[];
+ const occlusionAudit={architectural:0,ordered:0,ambiguous:0,cycles:0};
  const addEdge=(from,to)=>{if(from===to||edges[from].includes(to))return;edges[from].push(to);incoming[to]++;};
  for(let i=0;i<items.length;i++)for(let j=i+1;j<items.length;j++){
   if(items[i].object&&items[i].object===items[j].object)continue;
   if(!overlap(bounds[i],bounds[j]))continue;
   const ij=strictBehind(footprints[i],footprints[j]),ji=strictBehind(footprints[j],footprints[i]);
-  if(ij&&!ji){addEdge(i,j);}
-  else if(ji&&!ij){addEdge(j,i);}
-  else conflicts.push([i,j]);
+  if(ij&&!ji){addEdge(i,j);occlusionAudit.ordered++;}
+  else if(ji&&!ij){addEdge(j,i);occlusionAudit.ordered++;}
+  else {conflicts.push([i,j]);occlusionAudit.ambiguous++;}
  }
  // Preserve the construction order of each building's own surfaces.
  // These dependencies are acyclic and do not alter other scene objects.
@@ -133,9 +137,16 @@ function judgeOcclusion(items){
   for(let j=0;j<items.length;j++){
    const b=items[j];if(i===j||b.kind!=='prefab-surface'||a.object!==b.object)continue;
    if((a.surface==='base'&&b.surface==='roof')||(a.surface==='roof'&&b.surface==='details')){
-    addEdge(i,j);
+    architecturalEdges.push([i,j]);occlusionAudit.architectural++;
    }
   }
+ }
+ // Architectural order must never be overridden by a camera-only dependency.
+ // Remove opposing camera edges before inserting mandatory local constraints.
+ for(const [from,to] of architecturalEdges){
+  const reverse=edges[to].indexOf(from);
+  if(reverse!==-1){edges[to].splice(reverse,1);incoming[from]--;}
+  addEdge(from,to);
  }
  const pending=new Set(items.map((_,i)=>i)),result=[];
  while(pending.size){
@@ -143,11 +154,12 @@ function judgeOcclusion(items){
   // Cyclic or genuinely intersecting geometry is intentionally conservative.
   // In an occlusion cycle, release the lowest-depth surface deterministically.
   // Only unresolved edges are considered; never corrupt an already painted item.
+  if(!ready.length)occlusionAudit.cycles++;
   const next=ready.length?ready[0]:Array.from(pending).sort((i,j)=>painterCompare(items[i],items[j])||i-j)[0];
   pending.delete(next);result.push(next);
   for(const target of edges[next])if(pending.has(target))incoming[target]--;
  }
- return {ordered:result.map(i=>items[i]),conflicts,footprints,bounds};
+ return {ordered:result.map(i=>items[i]),conflicts,footprints,bounds,audit:occlusionAudit};
 }
 const judgement=judgeOcclusion(raised);
 raised.splice(0,raised.length,...judgement.ordered);
@@ -181,7 +193,7 @@ if(depthDebug){
  const overlay=node('g',{'data-gmrcart-depth-debug':'true','pointer-events':'none'});
  // Show ambiguous projected overlaps without changing any saved data.
  const status=node('text',{x:12,y:18,fill:'#fff1bb','font-size':10,stroke:'#241b23','stroke-width':2,'paint-order':'stroke'},overlay);
- status.textContent=`Occlusion audit: ${judgement.conflicts.length} ambiguous overlap pairs`;
+ status.textContent=`Occlusion audit: ${judgement.audit.ambiguous} ambiguous · ${judgement.audit.ordered} ordered · ${judgement.audit.architectural} architectural · ${judgement.audit.cycles} cycles`;
 
  debugEntries.forEach(({item,index})=>{
   if(item.kind==='prefab-surface'&&item.surface!=='roof')return;
