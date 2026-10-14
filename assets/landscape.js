@@ -8,6 +8,9 @@ let zoom=1,panX=0,panY=0;const MIN_ZOOM=.5,MAX_ZOOM=2,BASE_WIDTH=660,BASE_HEIGHT
 const styleControls=root.querySelector('.gmrcart-atlas-style');
 const illustrationToolbar=root.querySelector('.gmrcart-illustration-toolbar');
 const assetLibrary=window.gmrcartAtlasAssets;
+const sketchbook=window.gmrcartArchitecturalSketchbook;
+function sketch(type){return sketchbook?.resolve(type)||null;}
+function roofFinish(type){const name=sketch(type)?.roof;return sketchbook?.roofs?.[name]||null;}
 const assetBase=window.gmrcartScene?.atlasAssetBase||'';
 function sprite(name,x,y,width,height){if(illustrationStyle!=='pixel'||!assetLibrary||!assetBase)return false;const path=assetLibrary.resolve('marketrealm',name);if(!path)return false;node('image',{href:assetBase.replace(/\/$/,'')+'/'+path,x,y,width,height,preserveAspectRatio:'xMidYMax meet',style:'image-rendering:pixelated'});return true;}
 styleControls?.querySelectorAll('[data-gmrcart-style]').forEach(button=>button.addEventListener('click',()=>{illustrationStyle=button.dataset.gmrcartStyle;styleControls.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));schedule();}));
@@ -54,12 +57,12 @@ function terrainDetail(x,y,mat){const c=point(x+.5,y+.5);const seed=(x*73+y*149)
  if(mat==='floor'){if(seed<4){node('ellipse',{cx:c[0]+seed-5,cy:c[1]+2,rx:3.2,ry:1.3,fill:'#617c49',opacity:.8});line([c[0]+seed-5,c[1]+2],[c[0]+seed-4,c[1]-2],'#789755',.8);}if(seed===8){node('circle',{cx:c[0]-3,cy:c[1],r:1.1,fill:'#e3c98b'});node('circle',{cx:c[0]+1,cy:c[1]-1,r:1,fill:'#e3c98b'});}}
  if(mat==='water'){node('path',{d:`M ${c[0]-9} ${c[1]+2} q 5 -3 10 0 t 9 0`,stroke:'#b5e4e3','stroke-width':1.3,fill:'none',opacity:.7});node('path',{d:`M ${c[0]-4} ${c[1]-3} q 4 -2 8 0`,stroke:'#174e73','stroke-width':1.1,fill:'none',opacity:.55});}
 }
-function buildingDetails(o,w,h,top){const cx=o.x+w/2,cy=o.y+h/2;const isTower=o.type==='tower';const isMarket=o.type==='market';
+function buildingDetails(o,w,h,top){const cx=o.x+w/2,cy=o.y+h/2;const isTower=o.type==='tower';const isMarket=o.type==='market';const design=sketch(o.type);
  const frontA=point(o.x,o.y+h,top-5),frontB=point(o.x+w,o.y+h,top-5);
- if(!isMarket){const door=point(cx,o.y+h,top-5);node('ellipse',{cx:door[0],cy:door[1]+4,rx:7,ry:3,fill:'#382c29',opacity:.4});polygon([[door[0]-4,door[1]],[door[0]+4,door[1]+2],[door[0]+4,door[1]-10],[door[0]-4,door[1]-12]],'#51382c','#35271e');node('circle',{cx:door[0]+2,cy:door[1]-5,r:.9,fill:'#f5ce78'});}
- for(const shift of [-.28,.28]){const p=point(cx+w*shift,o.y+h,top-7);polygon([[p[0]-4,p[1]-8],[p[0]+4,p[1]-6],[p[0]+4,p[1]+1],[p[0]-4,p[1]-1]],'#f6c875','#5c4030');line([p[0],p[1]-8],[p[0],p[1]],'#65483a',.9);}
+ if(!isMarket&&design?.door!=='none'){const door=point(cx,o.y+h,top-5);node('ellipse',{cx:door[0],cy:door[1]+4,rx:7,ry:3,fill:'#382c29',opacity:.4});polygon([[door[0]-4,door[1]],[door[0]+4,door[1]+2],[door[0]+4,door[1]-10],[door[0]-4,door[1]-12]],design?.door==='iron'?'#52555e':'#51382c','#35271e');node('circle',{cx:door[0]+2,cy:door[1]-5,r:.9,fill:'#f5ce78'});}
+ for(const shift of (design?.windows===1?[0]:design?.windows===0?[]:[-.28,.28])){const p=point(cx+w*shift,o.y+h,top-7);polygon([[p[0]-4,p[1]-8],[p[0]+4,p[1]-6],[p[0]+4,p[1]+1],[p[0]-4,p[1]-1]],'#f6c875','#5c4030');line([p[0],p[1]-8],[p[0],p[1]],'#65483a',.9);}
  const roofCenter=point(cx,cy,top+19);if(!isMarket){line([roofCenter[0]-14,roofCenter[1]-2],[roofCenter[0]+10,roofCenter[1]+10],'#e4aa7e',1.3,.8);}
- if(o.type==='cottage'||o.type==='tavern'||o.type==='blacksmith'){
+ if(design?.chimney){
  // Keep the stack anchored to the visible roof plane, not to an elevated world point.
  // The previous excessive height offset made chimneys float above the roof at every camera angle.
  const anchor=point(cx,cy,top+9);
@@ -211,7 +214,7 @@ if(item.surface==='base'){
 }
 if(item.surface==='roof'){
  if(stone){polygon([point(o.x,o.y,12),point(o.x+w,o.y,12),point(o.x+w,o.y+h,12),point(o.x,o.y+h,12)],atlas.stone);}
- else{const ridge1=point(o.x+w/2,o.y,top+18),ridge2=point(o.x+w/2,o.y+h,top+18);polygon([point(o.x,o.y,top),ridge1,ridge2,point(o.x,o.y+h,top)],o.type==='tavern'?'#835044':atlas.roofShade);polygon([ridge1,point(o.x+w,o.y,top),point(o.x+w,o.y+h,top),ridge2],o.type==='tavern'?'#a76a51':atlas.roof);}
+ else{const ridge1=point(o.x+w/2,o.y,top+18),ridge2=point(o.x+w/2,o.y+h,top+18);const finish=roofFinish(o.type);polygon([point(o.x,o.y,top),ridge1,ridge2,point(o.x,o.y+h,top)],finish?.dark||atlas.roofShade);polygon([ridge1,point(o.x+w,o.y,top),point(o.x+w,o.y+h,top),ridge2],finish?.light||atlas.roof);}
 }
 if(item.surface==='details'&&!stone)buildingDetails(o,w,h,top);
 
