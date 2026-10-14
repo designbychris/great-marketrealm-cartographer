@@ -13,7 +13,7 @@ final class PersistentBuildingEntrancesTest extends TestCase {
     public function testDoorOnlyAppearsOnCameraVisibleEntranceWall(): void {
         $js = file_get_contents(__DIR__ . '/../assets/landscape.js');
         self::assertStringContainsString('function visibleFacadeSide()', $js);
-        self::assertStringContainsString('visibleFacadeSide()===entranceSide(o)', $js);
+        self::assertStringContainsString('side===entranceSide(o)', $js);
         self::assertStringContainsString('const windowCenters=', $js);
         self::assertStringContainsString('function facadeOpening(', $js);
     }

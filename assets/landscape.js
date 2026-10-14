@@ -94,7 +94,8 @@ function architecturalRoofInk(o,w,h,top,stone){
 function architecturalWallInk(o,w,h,top){
  const design=sketch(o.type,o.appearance);
  if(!design||design.roof==='stone'||design.roof==='canvas')return;
- const face=visibleFacade(o,w,h);
+ for(const side of visibleFacadeSides()){
+ const face=facadeForSide(o,w,h,side);
  if(design.roof==='thatch'||design.roof==='terracotta'){
   for(const t of [.025,.975])line(face(t,1),face(t,20),'#63452f',2.2,.85);
   line(face(.025,7),face(.975,7),'#6c4b34',1.4,.8);
@@ -105,6 +106,7 @@ function architecturalWallInk(o,w,h,top){
    const t=(k+(row%2)*.35)/4;
    line(face(t,6+row*6),face(t,12+row*6),'#6f6a68',.8,.55);
   }
+ }
  }
 }
 // VI.6C.4: A facade is a world-space vertical plane. Never place openings
@@ -117,8 +119,12 @@ function entranceSide(o){
  return cardinal[((Math.round(degrees/90)%4)+4)%4];
 }
 function visibleFacadeSide(){return ['south','east','north','west'][orientation];}
-function visibleFacade(o,w,h){
- const side=visibleFacadeSide();
+// VI.6C.6: Two world-space elevations face each camera quadrant.
+// Their identity is fixed; camera rotation changes visibility, not features.
+function visibleFacadeSides(){
+ return [['south','east'],['east','north'],['north','west'],['west','south']][orientation];
+}
+function facadeForSide(o,w,h,side){
  return (t,z)=>{
   if(side==='south')return point(o.x+w*t,o.y+h,z);
   if(side==='north')return point(o.x+w*(1-t),o.y,z);
@@ -126,6 +132,8 @@ function visibleFacade(o,w,h){
   return point(o.x,o.y+h*t,z);
  };
 }
+// Retain the single-facade helper for legacy callers and compatibility.
+function visibleFacade(o,w,h){return facadeForSide(o,w,h,visibleFacadeSide());}
 function facadeOpening(face,center,width,bottom,height,fill){
  const l=center-width/2,r=center+width/2;
  return polygon([face(l,bottom),face(r,bottom),face(r,bottom+height),face(l,bottom+height)],fill,'#4a362d');
@@ -134,20 +142,27 @@ function buildingDetails(o,w,h,top){
  const design=sketch(o.type,o.appearance);
  if(!design)return;
  const isMarket=o.type==='market';
- const face=visibleFacade(o,w,h);
- // All elevations are measured upward from the ground, below the wall eaves.
- if(!isMarket&&design.door!=='none'&&visibleFacadeSide()===entranceSide(o)){
-  facadeOpening(face,.5,.17,0,14,design.door==='iron'?'#52555e':'#51382c');
-  line(face(.415,14),face(.585,14),'#aa8256',1.2);
-  const knob=face(.555,6);node('circle',{cx:knob[0],cy:knob[1],r:1,fill:'#f5ce78'});
- }
- const windowCenters=design.windows===0?[]:design.windows===1?[.25]:[.2,.8];
- for(const center of windowCenters){
-  const half=.065;
-  facadeOpening(face,center,half*2,10,7,'#f6c875');
-  line(face(center,10),face(center,17),'#65483a',1);
-  line(face(center-half,13.5),face(center+half,13.5),'#65483a',.9);
-  line(face(center-half-.01,9.5),face(center+half+.01,9.5),'#b18a60',1.5);
+ // Draw both visible elevations; the saved entrance direction stays fixed.
+ for(const side of visibleFacadeSides()){
+  const face=facadeForSide(o,w,h,side);
+  const isEntrance=side===entranceSide(o);
+  if(!isMarket&&design.door!=='none'&&isEntrance){
+   facadeOpening(face,.5,.17,0,14,design.door==='iron'?'#52555e':'#51382c');
+   line(face(.415,14),face(.585,14),'#aa8256',1.2);
+   const knob=face(.555,6);node('circle',{cx:knob[0],cy:knob[1],r:1,fill:'#f5ce78'});
+  }
+  // Front, rear and side elevations have distinct, stable window layouts.
+  // Reserve the centre of the entrance elevation for the door.
+  const windowCenters=design.windows===0?[]:design.windows===1?
+   (isEntrance?[.22]:[.5]):
+   (isEntrance?[.2,.8]:side==='north'?[.3,.7]:[.25,.75]);
+  for(const center of windowCenters){
+   const half=.065;
+   facadeOpening(face,center,half*2,10,7,'#f6c875');
+   line(face(center,10),face(center,17),'#65483a',1);
+   line(face(center-half,13.5),face(center+half,13.5),'#65483a',.9);
+   line(face(center-half-.01,9.5),face(center+half+.01,9.5),'#b18a60',1.5);
+  }
  }
  // Roof ridge runs along the Y axis. The chimney rises from an actual
  // roof-slope point, and is projected as a world-space vertical prism.
