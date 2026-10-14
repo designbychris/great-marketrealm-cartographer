@@ -92,43 +92,72 @@ function architecturalRoofInk(o,w,h,top,stone){
  line(point(o.x+w/2,o.y,z),point(o.x+w/2,o.y+h,z),roof==='slate'?'#414b59':'#80563e',1.5,.8);
 }
 function architecturalWallInk(o,w,h,top){
- const design=sketch(o.type,o.appearance);if(!design||design.roof==='stone'||design.roof==='canvas')return;
- const frontY=o.y+h;
- const wallTop=top-3;
+ const design=sketch(o.type,o.appearance);
+ if(!design||design.roof==='stone'||design.roof==='canvas')return;
+ const face=visibleFacade(o,w,h);
  if(design.roof==='thatch'||design.roof==='terracotta'){
-  // Exposed corner posts and a low timber sill on the near-facing facade.
-  for(const x of [o.x+.08,o.x+w-.08])line(point(x,frontY,2),point(x,frontY,wallTop),'#63452f',2.2,.85);
-  line(point(o.x+.06,frontY,7),point(o.x+w-.06,frontY,7),'#6c4b34',1.4,.8);
-  if(design.roof==='terracotta'){
-   for(let k=1;k<4;k++){
-    const x=o.x+w*k/4;
-    line(point(x,frontY,9),point(x,frontY,wallTop-2),'#7b543b',1.1,.7);
-   }
-  }
+  for(const t of [.025,.975])line(face(t,1),face(t,20),'#63452f',2.2,.85);
+  line(face(.025,7),face(.975,7),'#6c4b34',1.4,.8);
+  if(design.roof==='terracotta')for(const t of [.25,.5,.75])line(face(t,9),face(t,19),'#7b543b',1.1,.7);
  }else if(design.roof==='slate'){
-  // Sparse mortar courses give the workshop a sturdier stone-and-iron face.
-  for(const z of [6,12,18]){
-   line(point(o.x+.04,frontY,z),point(o.x+w-.04,frontY,z),'#6f6a68',.9,.6);
-  }
+  for(const z of [6,12,18])line(face(.025,z),face(.975,z),'#6f6a68',.9,.6);
   for(let row=0;row<2;row++)for(let k=1;k<4;k++){
-   const x=o.x+w*(k+(row%2)*.35)/4;
-   line(point(x,frontY,6+row*6),point(x,frontY,12+row*6),'#6f6a68',.8,.55);
+   const t=(k+(row%2)*.35)/4;
+   line(face(t,6+row*6),face(t,12+row*6),'#6f6a68',.8,.55);
   }
  }
 }
-function buildingDetails(o,w,h,top){const cx=o.x+w/2,cy=o.y+h/2;const isTower=o.type==='tower';const isMarket=o.type==='market';const design=sketch(o.type,o.appearance);
- const frontA=point(o.x,o.y+h,top-5),frontB=point(o.x+w,o.y+h,top-5);
- if(!isMarket&&design?.door!=='none'){const door=point(cx,o.y+h,top-5);node('ellipse',{cx:door[0],cy:door[1]+4,rx:7,ry:3,fill:'#382c29',opacity:.4});polygon([[door[0]-4,door[1]],[door[0]+4,door[1]+2],[door[0]+4,door[1]-10],[door[0]-4,door[1]-12]],design?.door==='iron'?'#52555e':'#51382c','#35271e');node('circle',{cx:door[0]+2,cy:door[1]-5,r:.9,fill:'#f5ce78'});line([door[0]-4,door[1]-11],[door[0]+4,door[1]-9],design?.door==='iron'?'#a0a5a9':'#aa8256',.9,.85);}
- for(const shift of (design?.windows===1?[0]:design?.windows===0?[]:[-.28,.28])){const p=point(cx+w*shift,o.y+h,top-7);polygon([[p[0]-4,p[1]-8],[p[0]+4,p[1]-6],[p[0]+4,p[1]+1],[p[0]-4,p[1]-1]],'#f6c875','#5c4030');line([p[0],p[1]-8],[p[0],p[1]],'#65483a',.9);line([p[0]-4,p[1]-4],[p[0]+4,p[1]-3],'#65483a',.8);line([p[0]-5,p[1]+2],[p[0]+5,p[1]+3],'#b18a60',1.5);}
- const roofCenter=point(cx,cy,top+19);if(!isMarket){line([roofCenter[0]-14,roofCenter[1]-2],[roofCenter[0]+10,roofCenter[1]+10],'#e4aa7e',1.3,.8);}
- if(design?.chimney){
- // Keep the stack anchored to the visible roof plane, not to an elevated world point.
- // The previous excessive height offset made chimneys float above the roof at every camera angle.
- const anchor=point(cx,cy,top+9);
- polygon([[anchor[0]-3,anchor[1]+3],[anchor[0]+3,anchor[1]+5],[anchor[0]+3,anchor[1]-9],[anchor[0]-3,anchor[1]-11]],'#89736c','#453a3a');
- node('ellipse',{cx:anchor[0],cy:anchor[1]-10,rx:3.5,ry:1.5,fill:'#39353c'});if(o.type==='blacksmith'){line([anchor[0]-3,anchor[1]-4],[anchor[0]+3,anchor[1]-2],'#c0a69a',1.4);node('path',{d:`M${anchor[0]} ${anchor[1]-12}q-4 -5 1 -9`,stroke:'#b7b4b0','stroke-width':1.3,fill:'none',opacity:.65});}
+// VI.6C.4: A facade is a world-space vertical plane. Never place openings
+// by shifting a projected screen point: that lets them float over the roof.
+function visibleFacade(o,w,h){
+ const side=['south','east','north','west'][orientation];
+ return (t,z)=>{
+  if(side==='south')return point(o.x+w*t,o.y+h,z);
+  if(side==='north')return point(o.x+w*(1-t),o.y,z);
+  if(side==='east')return point(o.x+w,o.y+h*(1-t),z);
+  return point(o.x,o.y+h*t,z);
+ };
+}
+function facadeOpening(face,center,width,bottom,height,fill){
+ const l=center-width/2,r=center+width/2;
+ return polygon([face(l,bottom),face(r,bottom),face(r,bottom+height),face(l,bottom+height)],fill,'#4a362d');
+}
+function buildingDetails(o,w,h,top){
+ const design=sketch(o.type,o.appearance);
+ if(!design)return;
+ const isMarket=o.type==='market';
+ const face=visibleFacade(o,w,h);
+ // All elevations are measured upward from the ground, below the wall eaves.
+ if(!isMarket&&design.door!=='none'){
+  facadeOpening(face,.5,.17,0,14,design.door==='iron'?'#52555e':'#51382c');
+  line(face(.415,14),face(.585,14),'#aa8256',1.2);
+  const knob=face(.555,6);node('circle',{cx:knob[0],cy:knob[1],r:1,fill:'#f5ce78'});
+ }
+ const windowCenters=design.windows===0?[]:design.windows===1?[.25]:[.2,.8];
+ for(const center of windowCenters){
+  const half=.065;
+  facadeOpening(face,center,half*2,10,7,'#f6c875');
+  line(face(center,10),face(center,17),'#65483a',1);
+  line(face(center-half,13.5),face(center+half,13.5),'#65483a',.9);
+  line(face(center-half-.01,9.5),face(center+half+.01,9.5),'#b18a60',1.5);
+ }
+ // Roof ridge runs along the Y axis. The chimney rises from an actual
+ // roof-slope point, and is projected as a world-space vertical prism.
+ if(design.chimney){
+  const x=o.x+w*.62,y=o.y+h*.38;
+  const roofZ=top+18*(1-Math.abs((x-o.x)/w-.5)*2);
+  const foot=point(x,y,roofZ),high=point(x,y,roofZ+15);
+  const left=point(x-.055,y,roofZ),right=point(x+.055,y,roofZ);
+  const upperLeft=point(x-.055,y,roofZ+15),upperRight=point(x+.055,y,roofZ+15);
+  polygon([left,right,upperRight,upperLeft],'#89736c','#453a3a');
+  line(upperLeft,upperRight,'#39353c',2);
+  if(o.type==='blacksmith'){
+   line(point(x-.055,y,roofZ+9),point(x+.055,y,roofZ+9),'#c0a69a',1.2);
+   node('path',{d:`M${high[0]} ${high[1]-2}q-4 -5 1 -9`,stroke:'#b7b4b0','stroke-width':1.3,fill:'none',opacity:.65});
+  }
  }
 }
+
 function draw(){if(!active)return;preview.replaceChildren();applyViewport();preview.setAttribute('role','img');preview.setAttribute('aria-label',`Isometric preview of the current construction scene, ${cameraNames[orientation]} view`);
 const tiles=Array.from(grid.querySelectorAll('.gmrcart-cell'));
 const order=[];for(let y=0;y<H;y++)for(let x=0;x<W;x++){const [u,v]=orient(x+.5,y+.5);order.push({x,y,depth:u+v});}order.sort((a,b)=>a.depth-b.depth);for(const {x,y} of order){const mat=tiles[y*W+x]?.dataset.material||'empty';const a=point(x,y),b=point(x+1,y),c=point(x+1,y+1),d=point(x,y+1),center=point(x+.5,y+.5);
