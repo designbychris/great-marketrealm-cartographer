@@ -96,15 +96,26 @@ function architecturalWallInk(o,w,h,top){
  if(!design||design.roof==='stone'||design.roof==='canvas')return;
  for(const side of visibleFacadeSides()){
  const face=facadeForSide(o,w,h,side);
+ // VI.6C.8: framing is fixed to the wall plane, and stays outside
+ // the window band (z=10..17) and the central entrance opening.
  if(design.roof==='thatch'||design.roof==='terracotta'){
-  for(const t of [.025,.975])line(face(t,1),face(t,20),'#63452f',2.2,.85);
-  line(face(.025,7),face(.975,7),'#6c4b34',1.4,.8);
-  if(design.roof==='terracotta')for(const t of [.25,.5,.75])line(face(t,9),face(t,19),'#7b543b',1.1,.7);
+  const timber=design.roof==='terracotta'?'#744a32':'#775536';
+  for(const t of [.025,.975])line(face(t,1),face(t,20),timber,2.4,.9);
+  for(const z of [3,19])line(face(.025,z),face(.975,z),timber,1.7,.82);
+  // Corner braces live above the windows, never through glazing.
+  line(face(.025,19),face(.14,17.7),timber,1.3,.8);
+  line(face(.975,19),face(.86,17.7),timber,1.3,.8);
+  // Low wall panels stop short of the centrally anchored entrance.
+  for(const t of [.22,.78])line(face(t,3),face(t,8),timber,1.2,.75);
  }else if(design.roof==='slate'){
-  for(const z of [6,12,18])line(face(.025,z),face(.975,z),'#6f6a68',.9,.6);
-  for(let row=0;row<2;row++)for(let k=1;k<4;k++){
-   const t=(k+(row%2)*.35)/4;
-   line(face(t,6+row*6),face(t,12+row*6),'#6f6a68',.8,.55);
+  const mortar='#77716e';
+  // Masonry courses avoid the z=10..17 opening band entirely.
+  for(const z of [3,7,19])line(face(.025,z),face(.975,z),mortar,.95,.66);
+  for(const [bottom,top,offset] of [[3,7,0],[19,21,.5]]){
+   for(let k=1;k<5;k++){
+    const t=(k+offset)/5;
+    if(t<.96)line(face(t,bottom),face(t,top),mortar,.85,.58);
+   }
   }
  }
  }
