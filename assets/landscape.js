@@ -138,6 +138,32 @@ function facadeOpening(face,center,width,bottom,height,fill){
  const l=center-width/2,r=center+width/2;
  return polygon([face(l,bottom),face(r,bottom),face(r,bottom+height),face(l,bottom+height)],fill,'#4a362d');
 }
+// VI.6C.7: Shutters and glazing are drawn on the same world-space wall
+// plane as the opening. They never depend on screen offsets or camera angle.
+function architecturalWindow(face,center,design){
+ const half=.065;
+ const frame=design.roof==='slate'?'#59535a':design.roof==='terracotta'?'#704936':'#79573c';
+ const shutter=design.roof==='slate'?'#626c79':design.roof==='terracotta'?'#874d36':'#816544';
+ const glass=design.roof==='slate'?'#b6d5d8':'#f6c875';
+ // Closed geometry is reserved for the actual glazed opening.
+ facadeOpening(face,center,half*2,10,7,glass);
+ // Separate narrow shutter leaves flank the window rather than covering it.
+ for(const direction of [-1,1]){
+  const inner=center+direction*(half+.009);
+  const outer=center+direction*(half+.055);
+  polygon([face(inner,10),face(outer,10),face(outer,17),face(inner,17)],shutter,frame);
+  for(const z of [12,15])line(face(inner,z),face(outer,z),frame,.7,.75);
+ }
+ // Frame, mullions, lintel and sill follow the physical wall elevation.
+ line(face(center-half,17),face(center+half,17),frame,1.5);
+ line(face(center-half,10),face(center-half,17),frame,1.2);
+ line(face(center+half,10),face(center+half,17),frame,1.2);
+ line(face(center,10),face(center,17),frame,1);
+ line(face(center-half,13.5),face(center+half,13.5),frame,.9);
+ line(face(center-half-.025,9.5),face(center+half+.025,9.5),'#b18a60',1.7);
+ // Small reflected glint gives lit cottage and tavern glass a warmer finish.
+ if(design.roof!=='slate')line(face(center-.038,15.5),face(center-.018,16.4),'#fff0bc',.85,.8);
+}
 function buildingDetails(o,w,h,top){
  const design=sketch(o.type,o.appearance);
  if(!design)return;
@@ -157,11 +183,7 @@ function buildingDetails(o,w,h,top){
    (isEntrance?[.22]:[.5]):
    (isEntrance?[.2,.8]:side==='north'?[.3,.7]:[.25,.75]);
   for(const center of windowCenters){
-   const half=.065;
-   facadeOpening(face,center,half*2,10,7,'#f6c875');
-   line(face(center,10),face(center,17),'#65483a',1);
-   line(face(center-half,13.5),face(center+half,13.5),'#65483a',.9);
-   line(face(center-half-.01,9.5),face(center+half+.01,9.5),'#b18a60',1.5);
+   architecturalWindow(face,center,design);
   }
  }
  // Roof ridge runs along the Y axis. The chimney rises from an actual
