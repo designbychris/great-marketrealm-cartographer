@@ -109,8 +109,16 @@ function architecturalWallInk(o,w,h,top){
 }
 // VI.6C.4: A facade is a world-space vertical plane. Never place openings
 // by shifting a projected screen point: that lets them float over the roof.
+// VI.6C.5: Entrances are anchored to the prefab's own rotation, never
+// reassigned when the camera turns. Existing prefabs face south at 0 degrees.
+const cardinal=['south','west','north','east'];
+function entranceSide(o){
+ const degrees=Number(o.rotation)||0;
+ return cardinal[((Math.round(degrees/90)%4)+4)%4];
+}
+function visibleFacadeSide(){return ['south','east','north','west'][orientation];}
 function visibleFacade(o,w,h){
- const side=['south','east','north','west'][orientation];
+ const side=visibleFacadeSide();
  return (t,z)=>{
   if(side==='south')return point(o.x+w*t,o.y+h,z);
   if(side==='north')return point(o.x+w*(1-t),o.y,z);
@@ -128,7 +136,7 @@ function buildingDetails(o,w,h,top){
  const isMarket=o.type==='market';
  const face=visibleFacade(o,w,h);
  // All elevations are measured upward from the ground, below the wall eaves.
- if(!isMarket&&design.door!=='none'){
+ if(!isMarket&&design.door!=='none'&&visibleFacadeSide()===entranceSide(o)){
   facadeOpening(face,.5,.17,0,14,design.door==='iron'?'#52555e':'#51382c');
   line(face(.415,14),face(.585,14),'#aa8256',1.2);
   const knob=face(.555,6);node('circle',{cx:knob[0],cy:knob[1],r:1,fill:'#f5ce78'});
