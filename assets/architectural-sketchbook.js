@@ -19,5 +19,5 @@
   canvas:Object.freeze({light:'#d6b87c',dark:'#9c7751'}),
   stone:Object.freeze({light:'#b2ada4',dark:'#85817e'})
  });
- window.gmrcartArchitecturalSketchbook=Object.freeze({version:1,sketches,roofs,resolve(type){return sketches[String(type)]||null;}});
+ window.gmrcartArchitecturalSketchbook=Object.freeze({version:1,sketches,roofs,resolve(type,appearance){const chosen=String(appearance||'default');return sketches[chosen==='default'?String(type):chosen]||sketches[String(type)]||null;}});
 })();

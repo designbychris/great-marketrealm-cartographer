@@ -45,6 +45,7 @@ final class Scene
                 || isset($ids[$object['id']]) || !is_string($object['type']) || !isset(self::PREFABS[$object['type']])
                 || !is_int($object['x']) || !is_int($object['y']) || !is_int($object['rotation'])
                 || !in_array($object['rotation'], [0, 90, 180, 270], true)) return null;
+            if (array_key_exists('appearance', $object) && (!is_string($object['appearance']) || !in_array($object['appearance'], ['default', 'cottage', 'tavern', 'blacksmith', 'tower', 'market'], true))) return null;
             $ids[$object['id']] = true;
             [$w,$h] = self::PREFABS[$object['type']];
             if ($object['rotation'] === 90 || $object['rotation'] === 270) [$w,$h] = [$h,$w];

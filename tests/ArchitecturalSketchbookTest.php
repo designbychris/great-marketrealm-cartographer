@@ -12,7 +12,7 @@ final class ArchitecturalSketchbookTest extends TestCase {
   self::assertStringContainsString('gmrcartArchitecturalSketchbook',$manifest);
   self::assertStringContainsString("roof:'thatch'",$manifest);
   self::assertStringContainsString("roof:'slate'",$manifest);
-  self::assertStringContainsString('roofFinish(o.type)',$renderer);
+  self::assertStringContainsString('roofFinish(o.type,o.appearance)',$renderer);
   self::assertStringNotContainsString('fetch(',$manifest);
   self::assertStringNotContainsString('localStorage',$manifest);
  }

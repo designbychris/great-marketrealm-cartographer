@@ -9,8 +9,8 @@ const styleControls=root.querySelector('.gmrcart-atlas-style');
 const illustrationToolbar=root.querySelector('.gmrcart-illustration-toolbar');
 const assetLibrary=window.gmrcartAtlasAssets;
 const sketchbook=window.gmrcartArchitecturalSketchbook;
-function sketch(type){return sketchbook?.resolve(type)||null;}
-function roofFinish(type){const name=sketch(type)?.roof;return sketchbook?.roofs?.[name]||null;}
+function sketch(type,appearance){return sketchbook?.resolve(type,appearance)||null;}
+function roofFinish(type,appearance){const name=sketch(type,appearance)?.roof;return sketchbook?.roofs?.[name]||null;}
 const assetBase=window.gmrcartScene?.atlasAssetBase||'';
 function sprite(name,x,y,width,height){if(illustrationStyle!=='pixel'||!assetLibrary||!assetBase)return false;const path=assetLibrary.resolve('marketrealm',name);if(!path)return false;node('image',{href:assetBase.replace(/\/$/,'')+'/'+path,x,y,width,height,preserveAspectRatio:'xMidYMax meet',style:'image-rendering:pixelated'});return true;}
 styleControls?.querySelectorAll('[data-gmrcart-style]').forEach(button=>button.addEventListener('click',()=>{illustrationStyle=button.dataset.gmrcartStyle;styleControls.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));schedule();}));
@@ -60,7 +60,7 @@ function terrainDetail(x,y,mat){const c=point(x+.5,y+.5);const seed=(x*73+y*149)
 // VI.6C.2: Architectural ink is generated from world-space surfaces, not saved objects.
 // Projecting every stroke through point() keeps details attached at all four camera angles.
 function architecturalRoofInk(o,w,h,top,stone){
- const design=sketch(o.type);if(!design||stone)return;
+ const design=sketch(o.type,o.appearance);if(!design||stone)return;
  const roof=design.roof;
  const z=top+18;
  // Both roof slopes use the same interpolation as the existing roof polygons.
@@ -92,7 +92,7 @@ function architecturalRoofInk(o,w,h,top,stone){
  line(point(o.x+w/2,o.y,z),point(o.x+w/2,o.y+h,z),roof==='slate'?'#414b59':'#80563e',1.5,.8);
 }
 function architecturalWallInk(o,w,h,top){
- const design=sketch(o.type);if(!design||design.roof==='stone'||design.roof==='canvas')return;
+ const design=sketch(o.type,o.appearance);if(!design||design.roof==='stone'||design.roof==='canvas')return;
  const frontY=o.y+h;
  const wallTop=top-3;
  if(design.roof==='thatch'||design.roof==='terracotta'){
@@ -116,7 +116,7 @@ function architecturalWallInk(o,w,h,top){
   }
  }
 }
-function buildingDetails(o,w,h,top){const cx=o.x+w/2,cy=o.y+h/2;const isTower=o.type==='tower';const isMarket=o.type==='market';const design=sketch(o.type);
+function buildingDetails(o,w,h,top){const cx=o.x+w/2,cy=o.y+h/2;const isTower=o.type==='tower';const isMarket=o.type==='market';const design=sketch(o.type,o.appearance);
  const frontA=point(o.x,o.y+h,top-5),frontB=point(o.x+w,o.y+h,top-5);
  if(!isMarket&&design?.door!=='none'){const door=point(cx,o.y+h,top-5);node('ellipse',{cx:door[0],cy:door[1]+4,rx:7,ry:3,fill:'#382c29',opacity:.4});polygon([[door[0]-4,door[1]],[door[0]+4,door[1]+2],[door[0]+4,door[1]-10],[door[0]-4,door[1]-12]],design?.door==='iron'?'#52555e':'#51382c','#35271e');node('circle',{cx:door[0]+2,cy:door[1]-5,r:.9,fill:'#f5ce78'});line([door[0]-4,door[1]-11],[door[0]+4,door[1]-9],design?.door==='iron'?'#a0a5a9':'#aa8256',.9,.85);}
  for(const shift of (design?.windows===1?[0]:design?.windows===0?[]:[-.28,.28])){const p=point(cx+w*shift,o.y+h,top-7);polygon([[p[0]-4,p[1]-8],[p[0]+4,p[1]-6],[p[0]+4,p[1]+1],[p[0]-4,p[1]-1]],'#f6c875','#5c4030');line([p[0],p[1]-8],[p[0],p[1]],'#65483a',.9);line([p[0]-4,p[1]-4],[p[0]+4,p[1]-3],'#65483a',.8);line([p[0]-5,p[1]+2],[p[0]+5,p[1]+3],'#b18a60',1.5);}
@@ -273,7 +273,7 @@ if(item.surface==='base'){
 }
 if(item.surface==='roof'){
  if(stone){polygon([point(o.x,o.y,12),point(o.x+w,o.y,12),point(o.x+w,o.y+h,12),point(o.x,o.y+h,12)],atlas.stone);}
- else{const ridge1=point(o.x+w/2,o.y,top+18),ridge2=point(o.x+w/2,o.y+h,top+18);const finish=roofFinish(o.type);polygon([point(o.x,o.y,top),ridge1,ridge2,point(o.x,o.y+h,top)],finish?.dark||atlas.roofShade);polygon([ridge1,point(o.x+w,o.y,top),point(o.x+w,o.y+h,top),ridge2],finish?.light||atlas.roof);architecturalRoofInk(o,w,h,top,false);}
+ else{const ridge1=point(o.x+w/2,o.y,top+18),ridge2=point(o.x+w/2,o.y+h,top+18);const finish=roofFinish(o.type,o.appearance);polygon([point(o.x,o.y,top),ridge1,ridge2,point(o.x,o.y+h,top)],finish?.dark||atlas.roofShade);polygon([ridge1,point(o.x+w,o.y,top),point(o.x+w,o.y+h,top),ridge2],finish?.light||atlas.roof);architecturalRoofInk(o,w,h,top,false);}
 }
 if(item.surface==='details'&&!stone){architecturalWallInk(o,w,h,top);buildingDetails(o,w,h,top);}
 
