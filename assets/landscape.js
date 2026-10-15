@@ -12,6 +12,38 @@ const sketchbook=window.gmrcartArchitecturalSketchbook;
 function sketch(type,appearance){return sketchbook?.resolve(type,appearance)||null;}
 function roofFinish(type,appearance){const name=sketch(type,appearance)?.roof;return sketchbook?.roofs?.[name]||null;}
 const assetBase=window.gmrcartScene?.atlasAssetBase||'';
+// VI.6D.1: Optional, view-only illustrated building atlas. Entries are explicit
+// four-angle transparent PNG/WebP sprites, never a substitute for geometry.
+// The registry is deliberately empty until an approved four-view set is supplied.
+// Sites may register artwork before landscape.js runs via gmrcartBuildingArt.
+const buildingArt=window.gmrcartBuildingArt||{};
+function hasBuildingIllustration(o){
+ const entry=buildingArt[o.type];const native=window.gmrcartScene?.prefabs?.[o.type]?.size||[1,1];
+ return illustrationStyle==='pixel'&&!!assetBase&&!!entry&&Array.isArray(entry.footprint)&&
+ entry.footprint[0]===native[0]&&entry.footprint[1]===native[1]&&
+ Array.isArray(entry.views)&&entry.views.length===4&&entry.views.every(v=>typeof v==='string'&&/^buildings\/[a-z0-9_/-]+\.(png|webp)$/.test(v));
+}
+function illustratedBuilding(o,w,h){
+ if(!hasBuildingIllustration(o))return false;
+ const entry=buildingArt[o.type];
+ if(!entry||!entry.views||!Array.isArray(entry.footprint)||entry.footprint.length!==2)return false;
+ // Never stretch a single illustration over a differently sized prefab.
+ const native=window.gmrcartScene?.prefabs?.[o.type]?.size||[1,1];
+ if(entry.footprint[0]!==native[0]||entry.footprint[1]!==native[1])return false;
+ const view=entry.views[orientation];
+ if(typeof view!=='string'||!/^buildings\/[a-z0-9_/-]+\.(png|webp)$/.test(view))return false;
+ const corners=[point(o.x,o.y),point(o.x+w,o.y),point(o.x+w,o.y+h),point(o.x,o.y+h)];
+ const xs=corners.map(p=>p[0]),ys=corners.map(p=>p[1]);
+ const x=Math.min(...xs),ground=Math.max(...ys);
+ const width=Math.max(...xs)-x;
+ // Illustration registration defines pixel-space height relative to footprint width.
+ const height=width*(Number(entry.aspect)||1.1);
+ node('image',{href:assetBase.replace(/\/$/,'')+'/'+view,x,y:ground-height,width,height,
+  preserveAspectRatio:'xMidYMax meet','data-gmrcart-building-art':o.type,
+  style:'image-rendering:pixelated','pointer-events':'none'});
+ return true;
+}
+
 function sprite(name,x,y,width,height){if(illustrationStyle!=='pixel'||!assetLibrary||!assetBase)return false;const path=assetLibrary.resolve('marketrealm',name);if(!path)return false;node('image',{href:assetBase.replace(/\/$/,'')+'/'+path,x,y,width,height,preserveAspectRatio:'xMidYMax meet',style:'image-rendering:pixelated'});return true;}
 styleControls?.querySelectorAll('[data-gmrcart-style]').forEach(button=>button.addEventListener('click',()=>{illustrationStyle=button.dataset.gmrcartStyle;styleControls.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));schedule();}));
 const debugButton=root.querySelector('.gmrcart-depth-toggle');
@@ -356,11 +388,12 @@ if(item.surface==='base'){
  if(stone){polygon([b,c,point(o.x+w,o.y+h,12),point(o.x+w,o.y,12)],'#716a65');}
  else{polygon([a,d,point(o.x,o.y+h,top),point(o.x,o.y,top)],'#cbb38a');polygon([d,c,point(o.x+w,o.y+h,top),point(o.x,o.y+h,top)],'#94775c');}
 }
+if(item.surface==='roof'&&!stone&&illustratedBuilding(o,w,h))return;
 if(item.surface==='roof'){
  if(stone){polygon([point(o.x,o.y,12),point(o.x+w,o.y,12),point(o.x+w,o.y+h,12),point(o.x,o.y+h,12)],atlas.stone);}
  else{const ridge1=point(o.x+w/2,o.y,top+18),ridge2=point(o.x+w/2,o.y+h,top+18);const finish=roofFinish(o.type,o.appearance);polygon([point(o.x,o.y,top),ridge1,ridge2,point(o.x,o.y+h,top)],finish?.dark||atlas.roofShade);polygon([ridge1,point(o.x+w,o.y,top),point(o.x+w,o.y+h,top),ridge2],finish?.light||atlas.roof);architecturalRoofInk(o,w,h,top,false);}
 }
-if(item.surface==='details'&&!stone){architecturalWallInk(o,w,h,top);buildingDetails(o,w,h,top);}
+if(item.surface==='details'&&!stone){if(!hasBuildingIllustration(o)) {architecturalWallInk(o,w,h,top);buildingDetails(o,w,h,top);}}
 
 });
 if(depthDebug){
