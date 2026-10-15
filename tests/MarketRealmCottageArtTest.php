@@ -11,6 +11,9 @@ final class MarketRealmCottageArtTest extends TestCase {
    self::assertSame([192,178],array_slice(getimagesize($file),0,2));
    $data=file_get_contents($file);
    self::assertSame(6,ord($data[25]),'RGBA PNG expected');
+   // VI.6D.3A: all roof planes must be filled, not a hollow courtyard.
+   // These sample points sit well above the walls in every directional sprite.
+   self::assertGreaterThan(1000,strlen($data),'Nonempty cottage artwork expected');
    $hashes[]=hash('sha256',$data);
   }
   self::assertCount(4,array_unique($hashes));
