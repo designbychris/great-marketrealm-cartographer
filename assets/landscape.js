@@ -30,7 +30,7 @@ function illustratedBuilding(o,w,h){
  // Never stretch a single illustration over a differently sized prefab.
  const native=window.gmrcartScene?.prefabs?.[o.type]?.size||[1,1];
  if(entry.footprint[0]!==native[0]||entry.footprint[1]!==native[1])return false;
- const view=entry.views[orientation];
+ const view=entry.views[(orientation + (((Number(o.rotation)||0)%360+360)%360)/90)%4];
  if(typeof view!=='string'||!/^buildings\/[a-z0-9_/-]+\.(png|webp)$/.test(view))return false;
  const corners=[point(o.x,o.y),point(o.x+w,o.y),point(o.x+w,o.y+h),point(o.x,o.y+h)];
  const xs=corners.map(p=>p[0]),ys=corners.map(p=>p[1]);
