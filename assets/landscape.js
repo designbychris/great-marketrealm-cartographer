@@ -383,6 +383,7 @@ if(mat==='tree'&&!sprite('tree',center[0]-16,center[1]-49,32,57)){node('ellipse'
 let [w,h]=(window.gmrcartScene?.prefabs?.[o.type]?.size)||[1,1];if(o.rotation%180)[w,h]=[h,w];
 const a=point(o.x,o.y,0),b=point(o.x+w,o.y,0),c=point(o.x+w,o.y+h,0),d=point(o.x,o.y+h,0),top=22;
 const stone=['chamber','crypt','corridor'].includes(o.type);
+if(item.surface==='base'&&hasBuildingIllustration(o))return;
 if(item.surface==='base'){
  polygon([a,b,c,d],stone?'#8c8984':'#b29c77');
  if(stone){polygon([b,c,point(o.x+w,o.y+h,12),point(o.x+w,o.y,12)],'#716a65');}
