@@ -1,4 +1,4 @@
-/** VI.6D.2: reusable, view-only building illustration catalogue. */
+/** VI.6D.3: reusable, view-only building illustration catalogue. */
 (()=>{'use strict';
  const buildings={
   cottage:{footprint:[2,2],aspect:178/192,views:[
