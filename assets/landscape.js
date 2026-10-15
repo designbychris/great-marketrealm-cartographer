@@ -59,8 +59,11 @@ illustrationToolbar?.appendChild(zoomControls);
 const zoomLabel=zoomControls.querySelector('.gmrcart-zoom-label');
 function clamp(value,min,max){return Math.max(min,Math.min(max,value));}
 function applyViewport(){const width=BASE_WIDTH/zoom,height=BASE_HEIGHT/zoom;
- panX=clamp(panX,-(BASE_WIDTH-width)/2,(BASE_WIDTH-width)/2);
- panY=clamp(panY,-(BASE_HEIGHT-height)/2,(BASE_HEIGHT-height)/2);
+ // Permit movement at 100% as well as when zoomed in; leave a generous
+ // overscan margin, without letting the board disappear completely.
+ const panLimitX=BASE_WIDTH*.7+width*.15,panLimitY=BASE_HEIGHT*.7+height*.15;
+ panX=clamp(panX,-panLimitX,panLimitX);
+ panY=clamp(panY,-panLimitY,panLimitY);
  preview.setAttribute('viewBox',`${(BASE_WIDTH-width)/2+panX} ${(BASE_HEIGHT-height)/2+panY} ${width} ${height}`);
  if(zoomLabel)zoomLabel.textContent=`${Math.round(zoom*100)}%`;
 }
@@ -73,7 +76,7 @@ function setZoom(next,anchorX=.5,anchorY=.5){
 }
 zoomControls.addEventListener('click',event=>{const action=event.target.closest('button')?.dataset.gmrcartZoom;
  if(action==='in')setZoom(zoom+.25);else if(action==='out')setZoom(zoom-.25);
- else if(action==='reset'){zoom=1;panX=0;panY=0;applyViewport();}
+ else if(action==='reset'){zoom=1;panX=0;panY=0;if(orientation!==0)turn(-orientation,false);applyViewport();}
 });
 
 const atlas=window.gmrcartAtlasPalettes?.marketrealm||{floor:'#9d9169',empty:'#544a40',wall:'#9a8581',water:'#347d95',tree:'#6e8751',roof:'#bd7959',roofShade:'#955e48',stone:'#b2ada4'};
@@ -423,9 +426,9 @@ function schedule(){if(queued)return;queued=true;requestAnimationFrame(()=>{queu
 // crossfade between rendered views rather than claiming arbitrary 3D angles.
 const reducedMotion=window.matchMedia?.('(prefers-reduced-motion: reduce)');
 let gesture=null,turnToken=0;
-frame.style.touchAction='pan-y';
+frame.style.touchAction='none';
 frame.style.cursor='grab';
-frame.setAttribute('aria-label','Illustrated landscape. Drag horizontally to rotate; Shift and drag to pan; scroll to zoom.');
+frame.setAttribute('aria-label','Illustrated landscape. Drag to move the board; Alt and drag horizontally to rotate; scroll to zoom.');
 frame.addEventListener('wheel',event=>{if(!active||!event.cancelable)return;event.preventDefault();const bounds=frame.getBoundingClientRect();if(!bounds.width||!bounds.height)return;setZoom(zoom+(event.deltaY<0?.1:-.1),(event.clientX-bounds.left)/bounds.width,(event.clientY-bounds.top)/bounds.height);},{passive:false});
 function cameraLabel(){angleLabel.textContent=`${cameraNames[orientation]} · ${orientation*90}°`;}
 function clearTurnLayer(){frame.querySelectorAll('[data-gmrcart-turn-layer]').forEach(layer=>layer.remove());preview.style.opacity='';}
@@ -456,27 +459,34 @@ function turn(delta,animate=true){
  }
 }
 cameraButtons.forEach(button=>button.addEventListener('click',()=>turn(button.dataset.gmrcartCamera==='left'?-1:1)));
+// VI.6D.3B: plain drag pans at every zoom level; Alt-drag retains
+// the hand-turn gesture. The editable grid has its own pointer handlers.
 frame.addEventListener('pointerdown',event=>{
  if(!active||event.button!==0||gesture)return;
- gesture={id:event.pointerId,x:event.clientX,y:event.clientY,dragging:false,panning:event.shiftKey&&zoom>1,startPanX:panX,startPanY:panY};
- if(gesture.panning){gesture.dragging=true;frame.style.cursor='grabbing';try{frame.setPointerCapture(event.pointerId);}catch(_error){}}
+ gesture={id:event.pointerId,x:event.clientX,y:event.clientY,dragging:false,panning:!event.altKey,startPanX:panX,startPanY:panY};
+ try{frame.setPointerCapture(event.pointerId);}catch(_error){}
 });
 frame.addEventListener('pointermove',event=>{
  if(!gesture||event.pointerId!==gesture.id)return;
  const dx=event.clientX-gesture.x,dy=event.clientY-gesture.y;
- if(gesture.panning){const rect=frame.getBoundingClientRect();if(rect.width&&rect.height){panX=gesture.startPanX-dx*BASE_WIDTH/(rect.width*zoom);panY=gesture.startPanY-dy*BASE_HEIGHT/(rect.height*zoom);applyViewport();}return;}
- if(!gesture.dragging&&Math.abs(dx)>12&&Math.abs(dx)>Math.abs(dy)*1.2){
-  gesture.dragging=true;frame.style.cursor='grabbing';
-  try{frame.setPointerCapture(event.pointerId);}catch(_error){}
+ if(!gesture.dragging&&Math.hypot(dx,dy)>5){gesture.dragging=true;frame.style.cursor='grabbing';}
+ if(!gesture.dragging)return;
+ if(gesture.panning){
+  const rect=frame.getBoundingClientRect();
+  if(rect.width&&rect.height){
+   panX=gesture.startPanX-dx*BASE_WIDTH/(rect.width*zoom);
+   panY=gesture.startPanY-dy*BASE_HEIGHT/(rect.height*zoom);
+   applyViewport();
+  }
  }
 });
 function finishGesture(event,cancelled){
  if(!gesture||event.pointerId!==gesture.id)return;
  const dx=event.clientX-gesture.x,dragging=gesture.dragging,panning=gesture.panning;
+ if(cancelled&&panning){panX=gesture.startPanX;panY=gesture.startPanY;applyViewport();}
  gesture=null;frame.style.cursor='grab';
  if(frame.hasPointerCapture?.(event.pointerId))frame.releasePointerCapture(event.pointerId);
  if(!cancelled&&dragging&&!panning&&Math.abs(dx)>=36){
-  // Dragging right turns the world left, matching a hand turning a model.
   const steps=Math.min(3,Math.max(1,Math.round(Math.abs(dx)/120)));
   turn((dx>0?-1:1)*steps);
  }
