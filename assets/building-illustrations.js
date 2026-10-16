@@ -13,8 +13,41 @@
   fallbackViews:Object.freeze(views('cottage')),
   finish:'terracotta',tags:Object.freeze(['village','home','timber']),artVersion:2
  });
+ // VI.6D.6: Pattern Book entries describe future architecture without pretending
+ // unpainted buildings have approved four-angle sprites.
+ const patterns=Object.freeze({
+  cottage:Object.freeze({label:'MarketRealm Cottage',status:'painted',prefab:'cottage',
+   category:'homes',footprint:Object.freeze([2,2]),finish:'terracotta',
+   tags:Object.freeze(['village','home','timber']),artKey:'cottage'}),
+  villageHouse:Object.freeze({label:'Village House',status:'planned',prefab:null,
+   category:'homes',footprint:null,finish:'thatch',
+   tags:Object.freeze(['village','home']),artKey:null}),
+  bakery:Object.freeze({label:'Village Bakery',status:'planned',prefab:null,
+   category:'commerce',footprint:null,finish:'terracotta',
+   tags:Object.freeze(['village','bakery','shop']),artKey:null}),
+  blacksmith:Object.freeze({label:"Blacksmith's Forge",status:'planned',prefab:'blacksmith',
+   category:'craft',footprint:null,finish:'slate',
+   tags:Object.freeze(['village','forge','craft']),artKey:null}),
+  marketStall:Object.freeze({label:'Market Stall',status:'planned',prefab:'market',
+   category:'commerce',footprint:null,finish:'thatch',
+   tags:Object.freeze(['market','trade']),artKey:null})
+ });
+ const categories=Object.freeze({
+  homes:'Homes & cottages',commerce:'Shops & markets',craft:'Workshops & trades'
+ });
+ const patternBook=Object.freeze({
+  version:1,patterns,categories,
+  list(category){return Object.keys(patterns).filter(key=>!category||patterns[key].category===category)
+   .map(key=>Object.freeze({key,...patterns[key]}));},
+  get(key){return Object.prototype.hasOwnProperty.call(patterns,key)?patterns[key]:null;},
+  // Only fully registered, painted assets can be rendered; planned entries
+  // must never silently replace existing SVG/prefab illustrations.
+  artwork(key){const p=this.get(key);return p&&p.status==='painted'&&p.artKey?
+   (Object.prototype.hasOwnProperty.call(buildings,p.artKey)?buildings[p.artKey]:null):null;}
+ });
  const buildings=Object.freeze({cottage});
  window.gmrcartBuildingArt=buildings;
+ window.gmrcartArchitecturalPatternBook=patternBook;
  window.gmrcartBuildingPainter=Object.freeze({version:1,finishes,buildings,
   get(type){return Object.prototype.hasOwnProperty.call(buildings,type)?buildings[type]:null;},
   view(type,angle){const entry=this.get(type);if(!entry||!Number.isInteger(angle)||angle%90!==0)return null;return entry.views[((angle/90)%4+4)%4];}
