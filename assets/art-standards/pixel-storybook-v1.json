@@ -1,0 +1,73 @@
+{
+  "id": "marketrealm-pixel-storybook",
+  "version": 1,
+  "status": "art-direction-approved",
+  "scope": "illustrated-building-sprites",
+  "reference": "User-approved miniature bakery reference, October 2026; use as aesthetic guidance, not as a reusable sprite",
+  "visualLanguage": {
+    "primary": "warm hand-crafted isometric storybook miniature",
+    "secondary": "subtle pixel-defined edges",
+    "guidanceMix": "70% miniature / 30% pixel character (art direction, not numeric image processing)",
+    "materials": [
+      "warm cream plaster",
+      "chunky natural timber",
+      "rounded terracotta clay roof tiles",
+      "muted green canvas",
+      "stone foundation"
+    ],
+    "lighting": "soft consistent upper-left daylight; baked shading, no dramatic cast shadows",
+    "silhouette": "clear readable roof, chimney, doors, windows at final on-map size",
+    "pixelTreatment": "controlled pixel-edge definition; no blur or aggressive posterization; no heavy black outlines"
+  },
+  "camera": {
+    "angles": [
+      0,
+      90,
+      180,
+      270
+    ],
+    "independentViews": true,
+    "allowCssRotationOrMirroring": false,
+    "projection": "match existing Cartographer isometric projection and camera orientation"
+  },
+  "assetContract": {
+    "format": "PNG",
+    "background": "transparent alpha",
+    "viewNaming": "buildings/{stem}-{angle}.png",
+    "dimensions": "consistent across four views of a design; record width/height in art registration",
+    "display": "pixel-crisp edges; verify at native map scale and browser zoom",
+    "groundAnchor": "same logical ground plane for every view; visual foot must align with prefab footprint",
+    "safeMargins": "allow roof/chimney overhang but avoid excessive transparent padding",
+    "footprint": "geometry remains authoritative; artwork cannot change collision or placement"
+  },
+  "acceptance": {
+    "viewsRequired": 4,
+    "checks": [
+      "distinct artwork for every orientation",
+      "roof and chimney complete in every view",
+      "foundation and entrance meet the ground plane",
+      "occlusion with trees and walls remains correct",
+      "Classic mode unaffected",
+      "save and reload retain appearance",
+      "legible at 100% canvas zoom",
+      "no background rectangle or halo"
+    ]
+  },
+  "rollout": {
+    "first": "storybook cottage proof of concept",
+    "then": [
+      "village house",
+      "village bakery",
+      "blacksmith",
+      "market stall"
+    ],
+    "fallback": "retain existing painted assets until each new four-view set is approved",
+    "plannedPatterns": "must remain disabled until complete art registration"
+  },
+  "compatibility": {
+    "sceneSchemaChange": false,
+    "prefabGeometryChange": false,
+    "cameraChange": false,
+    "existingArtworkReplacement": false
+  }
+}
