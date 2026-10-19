@@ -12,6 +12,9 @@ final class VillageHousePatternTest extends TestCase {
    $hashes[]=hash_file('sha256',$file);
   }
   self::assertCount(4,array_unique($hashes));
+  // Opposite cameras must have distinct artwork, not duplicated front elevations.
+  self::assertNotSame($hashes[0],$hashes[2]);
+  self::assertNotSame($hashes[1],$hashes[3]);
  }
  public function test_pattern_is_painted_and_reuses_cottage_geometry(): void {
   $art=file_get_contents(dirname(__DIR__).'/assets/building-illustrations.js');
