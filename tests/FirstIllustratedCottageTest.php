@@ -28,7 +28,8 @@ final class FirstIllustratedCottageTest extends TestCase {
   self::assertCount(4,array_unique($hashes),'Every camera angle needs its own projected artwork.');
   $renderer=file_get_contents($root.'/assets/landscape.js');
   self::assertStringContainsString("if(item.surface==='base'&&hasBuildingIllustration(o))return;",$renderer);
-  self::assertStringContainsString("if(item.surface==='roof'&&!stone&&illustratedBuilding(o,w,h))return;",$renderer);
+  self::assertStringContainsString("if(item.surface==='roof'&&hasBuildingIllustration(o))return;",$renderer);
+  self::assertStringContainsString("if(item.surface==='details'&&!stone&&illustratedBuilding(o,w,h))return;",$renderer);
  }
 
 }
