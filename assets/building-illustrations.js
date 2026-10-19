@@ -18,11 +18,6 @@
   views:Object.freeze(views('village-house-painted')),finish:'terracotta',
   tags:Object.freeze(['village','home','timber','two-storey']),artVersion:1
  });
- const villageHouse=Object.freeze({
-  label:'MarketRealm Village House',footprint:Object.freeze([2,2]),aspect:178/192,
-  views:Object.freeze(views('village-house-painted')),finish:'terracotta',
-  tags:Object.freeze(['village','home','timber','two-storey']),artVersion:1
- });
  // VI.6D.6: Pattern Book entries describe future architecture without pretending
  // unpainted buildings have approved four-angle sprites.
  const patterns=Object.freeze({

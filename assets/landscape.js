@@ -18,9 +18,7 @@ const assetBase=window.gmrcartScene?.atlasAssetBase||'';
 // Sites may register artwork before landscape.js runs via gmrcartBuildingArt.
 const buildingArt=window.gmrcartBuildingArt||{};
 // Painted appearances reuse a certified prefab footprint; never change scene geometry.
-function artKey(o){return o.type==='cottage'&&o.appearance==='villageHouse'?'villageHouse':o.type;}
-// Painted appearances reuse a certified prefab footprint; never change scene geometry.
-function artKey(o){return o.type==='cottage'&&o.appearance==='villageHouse'?'villageHouse':o.type;}
+function artKey(o){return o.type==='cottage'&&o.appearance === 'villageHouse'?'villageHouse':o.type;}
 function hasBuildingIllustration(o){
  const entry=buildingArt[artKey(o)];const native=window.gmrcartScene?.prefabs?.[o.type]?.size||[1,1];
  return illustrationStyle==='pixel'&&!!assetBase&&!!entry&&Array.isArray(entry.footprint)&&
