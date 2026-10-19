@@ -13,7 +13,8 @@ final class IllustratedArchitectAtelierTest extends TestCase {
   $js=file_get_contents(__DIR__.'/../assets/landscape.js');
   self::assertStringContainsString("if(item.surface==='roof'&&!stone&&illustratedBuilding(o,w,h))return;",$js);
   self::assertStringContainsString('if(!hasBuildingIllustration(o)) {architecturalWallInk', $js);
-  self::assertStringContainsString("'data-gmrcart-building-art':o.type",$js);
+  self::assertStringContainsString("'data-gmrcart-building-art':artKey(o)",$js);
+  self::assertStringContainsString("function artKey(o)",$js);
   self::assertStringContainsString('const judgement=', $js);
  }
 }
