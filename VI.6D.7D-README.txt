@@ -1,0 +1,14 @@
+Phase VI.6D.7D — Pippin Finds His Missing Roof
+Overlay these paths onto the installed Cartographer plugin.
+
+- Village House painted sprite scales to 150% of the projected 2x2 footprint width, centred horizontally and bottom-anchored.
+- Painted building images render on the final details pass, avoiding early roof-pass rendering.
+- Illustrated silhouettes receive their own depth envelope; no global bring-to-front operation.
+- Existing cottage artwork and Classic geometry are unchanged.
+- Regression checks updated/added.
+
+Local checks: node --check assets/landscape.js; php -l on both PHP tests.
+Full PHPUnit suite not available in supplied repository; run on your server:
+php vendor/bin/phpunit --display-warnings
+
+Visual check: four camera angles, with trees in front/behind, and classic/pixel modes.

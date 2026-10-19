@@ -11,7 +11,7 @@ final class IllustratedArchitectAtelierTest extends TestCase {
  }
  public function testFallbackAndArchitecturalDepthRemain(): void {
   $js=file_get_contents(__DIR__.'/../assets/landscape.js');
-  self::assertStringContainsString("if(item.surface==='roof'&&!stone&&illustratedBuilding(o,w,h))return;",$js);
+  self::assertStringContainsString("if(item.surface==='details'&&!stone&&illustratedBuilding(o,w,h))return;",$js);
   self::assertStringContainsString('if(!hasBuildingIllustration(o)) {architecturalWallInk', $js);
   self::assertStringContainsString("'data-gmrcart-building-art':artKey(o)",$js);
   self::assertStringContainsString("function artKey(o)",$js);

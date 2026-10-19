@@ -16,6 +16,14 @@ final class VillageHousePatternTest extends TestCase {
   self::assertNotSame($hashes[0],$hashes[2]);
   self::assertNotSame($hashes[1],$hashes[3]);
  }
+ public function test_village_house_sprite_is_scaled_and_drawn_as_one_depth_surface(): void {
+  $js=file_get_contents(dirname(__DIR__).'/assets/landscape.js');
+  self::assertStringContainsString("artKey(o)==='villageHouse'?1.5:1",$js);
+  self::assertStringContainsString('const left=x-(width-footprintWidth)/2',$js);
+  self::assertStringContainsString("if(item.surface==='roof'&&hasBuildingIllustration(o))return;",$js);
+  self::assertStringContainsString("if(item.surface==='details'&&!stone&&illustratedBuilding(o,w,h))return;",$js);
+  self::assertStringContainsString("artKey(item.object)==='villageHouse'?62:42",$js);
+ }
  public function test_pattern_is_painted_and_reuses_cottage_geometry(): void {
   $art=file_get_contents(dirname(__DIR__).'/assets/building-illustrations.js');
   self::assertStringContainsString("views('village-house-painted')",$art);

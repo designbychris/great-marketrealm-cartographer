@@ -37,10 +37,14 @@ function illustratedBuilding(o,w,h){
  const corners=[point(o.x,o.y),point(o.x+w,o.y),point(o.x+w,o.y+h),point(o.x,o.y+h)];
  const xs=corners.map(p=>p[0]),ys=corners.map(p=>p[1]);
  const x=Math.min(...xs),ground=Math.max(...ys);
- const width=Math.max(...xs)-x;
- // Illustration registration defines pixel-space height relative to footprint width.
+ const footprintWidth=Math.max(...xs)-x;
+ // VI.6D.7D: taller painted houses need a larger silhouette than their ground footprint.
+ // Scale around the footprint centre and anchor the bottom to the same ground plane.
+ const scale=artKey(o)==='villageHouse'?1.5:1;
+ const width=footprintWidth*scale;
  const height=width*(Number(entry.aspect)||1.1);
- node('image',{href:assetBase.replace(/\/$/,'')+'/'+view,x,y:ground-height,width,height,
+ const left=x-(width-footprintWidth)/2;
+ node('image',{href:assetBase.replace(/\/$/,'')+'/'+view,x:left,y:ground-height,width,height,
   preserveAspectRatio:'xMidYMax meet','data-gmrcart-building-art':artKey(o),
   style:'image-rendering:pixelated','pointer-events':'none'});
  return true;
@@ -300,6 +304,7 @@ function surfaceHeight(item){
  if(item.kind==='wall')return [0,13];
  if(item.kind==='prefab-surface'){
   const stone=['chamber','crypt','corridor'].includes(item.object.type);
+  if(hasBuildingIllustration(item.object))return [0,artKey(item.object)==='villageHouse'?62:42];
   if(item.surface==='base')return [0,stone?12:22];
   if(item.surface==='roof')return [stone?12:22,stone?12:40];
   return [22,stone?22:42];
@@ -394,7 +399,10 @@ if(item.surface==='base'){
  if(stone){polygon([b,c,point(o.x+w,o.y+h,12),point(o.x+w,o.y,12)],'#716a65');}
  else{polygon([a,d,point(o.x,o.y+h,top),point(o.x,o.y,top)],'#cbb38a');polygon([d,c,point(o.x+w,o.y+h,top),point(o.x,o.y+h,top)],'#94775c');}
 }
-if(item.surface==='roof'&&!stone&&illustratedBuilding(o,w,h))return;
+// A painted sprite is one atomic silhouette: draw it on the final architectural
+// surface, never beneath later roof/details surfaces of its own building.
+if(item.surface==='roof'&&hasBuildingIllustration(o))return;
+if(item.surface==='details'&&!stone&&illustratedBuilding(o,w,h))return;
 if(item.surface==='roof'){
  if(stone){polygon([point(o.x,o.y,12),point(o.x+w,o.y,12),point(o.x+w,o.y+h,12),point(o.x,o.y+h,12)],atlas.stone);}
  else{const ridge1=point(o.x+w/2,o.y,top+18),ridge2=point(o.x+w/2,o.y+h,top+18);const finish=roofFinish(o.type,o.appearance);polygon([point(o.x,o.y,top),ridge1,ridge2,point(o.x,o.y+h,top)],finish?.dark||atlas.roofShade);polygon([ridge1,point(o.x+w,o.y,top),point(o.x+w,o.y+h,top),ridge2],finish?.light||atlas.roof);architecturalRoofInk(o,w,h,top,false);}
