@@ -13,15 +13,25 @@
   fallbackViews:Object.freeze(views('cottage')),
   finish:'terracotta',tags:Object.freeze(['village','home','timber']),artVersion:2
  });
+ const villageHouse=Object.freeze({
+  label:'MarketRealm Village House',footprint:Object.freeze([2,2]),aspect:178/192,
+  views:Object.freeze(views('village-house-painted')),finish:'terracotta',
+  tags:Object.freeze(['village','home','timber','two-storey']),artVersion:1
+ });
+ const villageHouse=Object.freeze({
+  label:'MarketRealm Village House',footprint:Object.freeze([2,2]),aspect:178/192,
+  views:Object.freeze(views('village-house-painted')),finish:'terracotta',
+  tags:Object.freeze(['village','home','timber','two-storey']),artVersion:1
+ });
  // VI.6D.6: Pattern Book entries describe future architecture without pretending
  // unpainted buildings have approved four-angle sprites.
  const patterns=Object.freeze({
   cottage:Object.freeze({label:'MarketRealm Cottage',status:'painted',prefab:'cottage',
    category:'homes',footprint:Object.freeze([2,2]),finish:'terracotta',
    tags:Object.freeze(['village','home','timber']),artKey:'cottage'}),
-  villageHouse:Object.freeze({label:'Village House',status:'planned',prefab:null,
-   category:'homes',footprint:null,finish:'thatch',
-   tags:Object.freeze(['village','home']),artKey:null}),
+  villageHouse:Object.freeze({label:'MarketRealm Village House',status:'painted',prefab:'cottage',
+   category:'homes',footprint:Object.freeze([2,2]),finish:'terracotta',
+   tags:Object.freeze(['village','home','timber','two-storey']),artKey:'villageHouse'}),
   bakery:Object.freeze({label:'Village Bakery',status:'planned',prefab:null,
    category:'commerce',footprint:null,finish:'terracotta',
    tags:Object.freeze(['village','bakery','shop']),artKey:null}),
@@ -45,7 +55,7 @@
   artwork(key){const p=this.get(key);return p&&p.status==='painted'&&p.artKey?
    (Object.prototype.hasOwnProperty.call(buildings,p.artKey)?buildings[p.artKey]:null):null;}
  });
- const buildings=Object.freeze({cottage});
+ const buildings=Object.freeze({cottage,villageHouse});
  window.gmrcartBuildingArt=buildings;
  window.gmrcartArchitecturalPatternBook=patternBook;
  window.gmrcartBuildingPainter=Object.freeze({version:1,finishes,buildings,

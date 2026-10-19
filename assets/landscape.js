@@ -17,15 +17,19 @@ const assetBase=window.gmrcartScene?.atlasAssetBase||'';
 // The registry is deliberately empty until an approved four-view set is supplied.
 // Sites may register artwork before landscape.js runs via gmrcartBuildingArt.
 const buildingArt=window.gmrcartBuildingArt||{};
+// Painted appearances reuse a certified prefab footprint; never change scene geometry.
+function artKey(o){return o.type==='cottage'&&o.appearance==='villageHouse'?'villageHouse':o.type;}
+// Painted appearances reuse a certified prefab footprint; never change scene geometry.
+function artKey(o){return o.type==='cottage'&&o.appearance==='villageHouse'?'villageHouse':o.type;}
 function hasBuildingIllustration(o){
- const entry=buildingArt[o.type];const native=window.gmrcartScene?.prefabs?.[o.type]?.size||[1,1];
+ const entry=buildingArt[artKey(o)];const native=window.gmrcartScene?.prefabs?.[o.type]?.size||[1,1];
  return illustrationStyle==='pixel'&&!!assetBase&&!!entry&&Array.isArray(entry.footprint)&&
  entry.footprint[0]===native[0]&&entry.footprint[1]===native[1]&&
  Array.isArray(entry.views)&&entry.views.length===4&&entry.views.every(v=>typeof v==='string'&&/^buildings\/[a-z0-9_/-]+\.(png|webp)$/.test(v));
 }
 function illustratedBuilding(o,w,h){
  if(!hasBuildingIllustration(o))return false;
- const entry=buildingArt[o.type];
+ const entry=buildingArt[artKey(o)];
  if(!entry||!entry.views||!Array.isArray(entry.footprint)||entry.footprint.length!==2)return false;
  // Never stretch a single illustration over a differently sized prefab.
  const native=window.gmrcartScene?.prefabs?.[o.type]?.size||[1,1];
@@ -39,7 +43,7 @@ function illustratedBuilding(o,w,h){
  // Illustration registration defines pixel-space height relative to footprint width.
  const height=width*(Number(entry.aspect)||1.1);
  node('image',{href:assetBase.replace(/\/$/,'')+'/'+view,x,y:ground-height,width,height,
-  preserveAspectRatio:'xMidYMax meet','data-gmrcart-building-art':o.type,
+  preserveAspectRatio:'xMidYMax meet','data-gmrcart-building-art':artKey(o),
   style:'image-rendering:pixelated','pointer-events':'none'});
  return true;
 }
