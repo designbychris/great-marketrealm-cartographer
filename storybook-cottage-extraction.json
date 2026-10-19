@@ -1,0 +1,47 @@
+{
+  "phase": "VI.6D.9B.1",
+  "source": "user supplied four-view image, generated in another ChatGPT conversation",
+  "note": "Source quadrant names are not camera angles. Confirm direction and baseline before connecting to renderer.",
+  "views": [
+    {
+      "source_quadrant": "top-left",
+      "sprite": "cottage-storybook-source-top-left.png",
+      "size": [
+        606,
+        503
+      ],
+      "camera_angle": null,
+      "status": "awaiting orientation verification"
+    },
+    {
+      "source_quadrant": "top-right",
+      "sprite": "cottage-storybook-source-top-right.png",
+      "size": [
+        613,
+        507
+      ],
+      "camera_angle": null,
+      "status": "awaiting orientation verification"
+    },
+    {
+      "source_quadrant": "bottom-left",
+      "sprite": "cottage-storybook-source-bottom-left.png",
+      "size": [
+        616,
+        501
+      ],
+      "camera_angle": null,
+      "status": "awaiting orientation verification"
+    },
+    {
+      "source_quadrant": "bottom-right",
+      "sprite": "cottage-storybook-source-bottom-right.png",
+      "size": [
+        618,
+        506
+      ],
+      "camera_angle": null,
+      "status": "awaiting orientation verification"
+    }
+  ]
+}
