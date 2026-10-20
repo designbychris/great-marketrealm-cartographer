@@ -1,0 +1,5 @@
+# VI.6D.9B.3 — Storybook cottage integration
+
+Four silhouettes were extracted from the user-approved transparent 1536×1024 image. Each complete connected silhouette was resized to a 192×178 transparent RGBA sprite with a bottom ground anchor and no edge cropping. The four images are assigned in reading order to camera slots 0°, 90°, 180°, 270°. **Caution:** the two lower source views are similar, and are not a geometrically verified opposite-angle pair. This is an initial visual integration, not a certification of true four-sided camera perspective.
+
+`assets/building-illustrations.js` now selects `cottage-storybook` as the active cottage views and keeps the prior `cottage-painted` art as fallback. No scene geometry, footprints, or occlusion algorithm changed. Compare all four camera orientations in Pixel-inspired mode and check that the building is not cut off or incorrectly layered. The images are higher detail in the source, but display at the same 192×178 sprite dimensions as before.

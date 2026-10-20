@@ -22,11 +22,11 @@ final class StorybookCottageArtTest extends TestCase
         self::assertCount(4, array_unique($hashes));
     }
 
-    public function testLivePaintedCottageIsNotReplacedBeforeApproval(): void
+    public function testApprovedStorybookCottageIsActiveWithPaintedFallback(): void
     {
         $js = file_get_contents(__DIR__ . '/../assets/building-illustrations.js');
         self::assertNotFalse($js);
-        self::assertStringContainsString("views('cottage-painted')", $js);
-        self::assertStringContainsString("fallbackViews:Object.freeze(views('cottage'))", $js);
+        self::assertStringContainsString("views('cottage-storybook')", $js);
+        self::assertStringContainsString("fallbackViews:Object.freeze(views('cottage-painted'))", $js);
     }
 }

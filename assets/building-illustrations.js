@@ -9,9 +9,9 @@
  const cottage=Object.freeze({
   label:'MarketRealm Cottage',footprint:Object.freeze([2,2]),aspect:178/192,
   // The painter's four registered views are not rotated or mirrored in CSS.
-  views:Object.freeze(views('cottage-painted')),
-  fallbackViews:Object.freeze(views('cottage')),
-  finish:'terracotta',tags:Object.freeze(['village','home','timber']),artVersion:2
+  views:Object.freeze(views('cottage-storybook')),
+  fallbackViews:Object.freeze(views('cottage-painted')),
+  finish:'terracotta',tags:Object.freeze(['village','home','timber']),artVersion:3
  });
  const villageHouse=Object.freeze({
   label:'MarketRealm Village House',footprint:Object.freeze([2,2]),aspect:178/192,
