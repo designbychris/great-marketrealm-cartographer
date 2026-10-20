@@ -1,0 +1,75 @@
+{
+  "phase": "VI.6D.9B.2",
+  "status": "artwork masters cleaned; camera direction assignment not approved",
+  "note": "Do not substitute source quadrants for true 0/90/180/270 camera views. Live cottage remains unchanged.",
+  "views": [
+    {
+      "source_quadrant": "top-left",
+      "master_sprite": "cottage-storybook-master-top-left.png",
+      "canvas": [
+        640,
+        560
+      ],
+      "alpha_bbox": [
+        24,
+        46,
+        616,
+        530
+      ],
+      "camera_angle": null,
+      "status": "awaiting four-direction art approval",
+      "sha256": "182da7edf726f7527b1ef9d97b02485cb82d23fe4789266845df737f7207a952"
+    },
+    {
+      "source_quadrant": "top-right",
+      "master_sprite": "cottage-storybook-master-top-right.png",
+      "canvas": [
+        640,
+        560
+      ],
+      "alpha_bbox": [
+        24,
+        44,
+        616,
+        530
+      ],
+      "camera_angle": null,
+      "status": "awaiting four-direction art approval",
+      "sha256": "3797b1028061a166168f5dfe77a0be8e92d64248a6f20efbe90ce5b6e7d265f6"
+    },
+    {
+      "source_quadrant": "bottom-left",
+      "master_sprite": "cottage-storybook-master-bottom-left.png",
+      "canvas": [
+        640,
+        560
+      ],
+      "alpha_bbox": [
+        24,
+        45,
+        616,
+        530
+      ],
+      "camera_angle": null,
+      "status": "awaiting four-direction art approval",
+      "sha256": "9f5c9d9636374006a8e2e6a5e4221d785ada9bbb9f8fdb60aff9bcf8dbd6be96"
+    },
+    {
+      "source_quadrant": "bottom-right",
+      "master_sprite": "cottage-storybook-master-bottom-right.png",
+      "canvas": [
+        640,
+        560
+      ],
+      "alpha_bbox": [
+        24,
+        42,
+        616,
+        530
+      ],
+      "camera_angle": null,
+      "status": "awaiting four-direction art approval",
+      "sha256": "20cb1f21d4a26fdb8464d827bb59f52513c4830cfa5963d0db6e409d684ce92e"
+    }
+  ]
+}
