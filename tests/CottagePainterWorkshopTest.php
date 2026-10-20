@@ -17,8 +17,8 @@ final class CottagePainterWorkshopTest extends TestCase {
  }
  public function test_painter_registry_remains_view_only_and_has_four_views(): void {
   $js=file_get_contents(dirname(__DIR__).'/assets/building-illustrations.js');
-  self::assertStringContainsString("views('cottage-painted')",$js);
-  self::assertStringContainsString("fallbackViews:Object.freeze(views('cottage'))",$js);
+  self::assertStringContainsString("views('cottage-storybook')",$js);
+  self::assertStringContainsString("fallbackViews:Object.freeze(views('cottage-painted'))",$js);
   self::assertStringContainsString('footprint:Object.freeze([2,2])',$js);
   self::assertStringContainsString('window.gmrcartBuildingPainter=Object.freeze',$js);
  }
