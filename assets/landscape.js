@@ -2,7 +2,7 @@
 const root=document.querySelector('.gmrcart-canvas-panel');if(!root||!window.gmrcartLandscape)return;
 const source=window.gmrcartLandscape,grid=root.querySelector('.gmrcart-grid'),preview=root.querySelector('.gmrcart-landscape'),frame=root.querySelector('.gmrcart-landscape-frame'),toggle=root.querySelector('.gmrcart-view-toggle');
 const ns='http://www.w3.org/2000/svg',W=12,H=12,tw=48,th=24,origin=330;
-let active=false,queued=false,orientation=0,illustrationStyle='classic',depthDebug=false;
+let active=false,queued=false,orientation=0,illustrationStyle='classic',depthDebug=false,terrainGrid=false;
 // VI.6B.9: view-only camera state; never written to the construction document.
 let zoom=1,panX=0,panY=0;const MIN_ZOOM=.5,MAX_ZOOM=2,BASE_WIDTH=660,BASE_HEIGHT=385;
 const styleControls=root.querySelector('.gmrcart-atlas-style');
@@ -68,6 +68,19 @@ function sprite(name,x,y,width,height){if(illustrationStyle!=='pixel'||!assetLib
 styleControls?.querySelectorAll('[data-gmrcart-style]').forEach(button=>button.addEventListener('click',()=>{illustrationStyle=button.dataset.gmrcartStyle;styleControls.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));schedule();}));
 const debugButton=root.querySelector('.gmrcart-depth-toggle');
 debugButton?.addEventListener('click',()=>{depthDebug=!depthDebug;debugButton.setAttribute('aria-pressed',String(depthDebug));debugButton.textContent=depthDebug?'Hide depth guides':'Show depth guides';schedule();});
+// VI.6D.11: Optional illustrated-view grid; never stored in the scene.
+const terrainGridButton=document.createElement('button');
+terrainGridButton.type='button';
+terrainGridButton.className='gmrcart-terrain-grid-toggle';
+terrainGridButton.textContent='Show terrain grid';
+terrainGridButton.setAttribute('aria-pressed','false');
+terrainGridButton.addEventListener('click',()=>{
+ terrainGrid=!terrainGrid;
+ terrainGridButton.setAttribute('aria-pressed',String(terrainGrid));
+ terrainGridButton.textContent=terrainGrid?'Hide terrain grid':'Show terrain grid';
+ schedule();
+});
+illustrationToolbar?.appendChild(terrainGridButton);
 const angleLabel=root.querySelector('.gmrcart-camera-angle');
 const cameraButtons=root.querySelectorAll('[data-gmrcart-camera]');
 const cameraNames=['South-east','South-west','North-west','North-east'];
@@ -272,8 +285,34 @@ function buildingDetails(o,w,h,top){
 function draw(){if(!active)return;preview.replaceChildren();applyViewport();preview.setAttribute('role','img');preview.setAttribute('aria-label',`Isometric preview of the current construction scene, ${cameraNames[orientation]} view`);
 const tiles=Array.from(grid.querySelectorAll('.gmrcart-cell'));
 const order=[];for(let y=0;y<H;y++)for(let x=0;x<W;x++){const [u,v]=orient(x+.5,y+.5);order.push({x,y,depth:u+v});}order.sort((a,b)=>a.depth-b.depth);for(const {x,y} of order){const mat=tiles[y*W+x]?.dataset.material||'empty';const a=point(x,y),b=point(x+1,y),c=point(x+1,y+1),d=point(x,y+1),center=point(x+.5,y+.5);
-const colors=atlas;polygon([a,b,c,d],mat==='floor'?shade(colors.floor,(x*17+y*11)%19-9):colors[mat]||colors.empty);terrainDetail(x,y,mat);
-if(mat==='water'){const adjacent=(dx,dy)=>{const xx=x+dx,yy=y+dy;return xx>=0&&xx<W&&yy>=0&&yy<H&&tiles[yy*W+xx]?.dataset.material==='water';};if(!adjacent(1,0))node('path',{d:`M ${b.join(' ')} L ${c.join(' ')}`,stroke:'#83c2cb','stroke-width':2,fill:'none'});node('path',{d:`M ${center[0]-8} ${center[1]+1} q 8 -5 16 -1`,stroke:'#9fd0d8','stroke-width':1.6,fill:'none',opacity:.7});}
+const colors=atlas;
+const seamless=illustrationStyle==='pixel';
+const fill=mat==='floor'?shade(colors.floor,(x*17+y*11)%19-9):colors[mat]||colors.empty;
+polygon([a,b,c,d],fill,seamless?'none':'#392c29');
+terrainDetail(x,y,mat);
+if(seamless){
+ // Only material boundaries are inked, never same-material tile seams.
+ // Check neighbours in world coordinates so all four camera views agree.
+ const materialAt=(xx,yy)=>xx>=0&&xx<W&&yy>=0&&yy<H
+  ?(tiles[yy*W+xx]?.dataset.material||'empty'):null;
+ const edges=[
+  {dx:0,dy:-1,start:a,end:b},
+  {dx:1,dy:0,start:b,end:c},
+  {dx:0,dy:1,start:c,end:d},
+  {dx:-1,dy:0,start:d,end:a}
+ ];
+ for(const edge of edges){
+  const neighbour=materialAt(x+edge.dx,y+edge.dy);
+  if(neighbour===mat)continue;
+  // Preserve the board silhouette; distinguish banks and paths without black tile outlines.
+  const bank=mat==='water'||neighbour==='water';
+  const color=bank?'#83b8b6':neighbour===null?'#645b46':'#746e55';
+  const width=bank?1.15:neighbour===null?.85:.55;
+  line(edge.start,edge.end,color,width,bank?.8:.48);
+ }
+}
+
+if(mat==='water'){const adjacent=(dx,dy)=>{const xx=x+dx,yy=y+dy;return xx>=0&&xx<W&&yy>=0&&yy<H&&tiles[yy*W+xx]?.dataset.material==='water';};if(!seamless&&!adjacent(1,0))node('path',{d:`M ${b.join(' ')} L ${c.join(' ')}`,stroke:'#83c2cb','stroke-width':2,fill:'none'});node('path',{d:`M ${center[0]-8} ${center[1]+1} q 8 -5 16 -1`,stroke:'#9fd0d8','stroke-width':1.6,fill:'none',opacity:.7});}
 
 }
 // VI.6B.3: One camera-depth queue for every raised item. Terrain stays underneath.
@@ -424,6 +463,13 @@ if(item.surface==='roof'){
 if(item.surface==='details'&&!stone){if(!hasBuildingIllustration(o)) {architecturalWallInk(o,w,h,top);buildingDetails(o,w,h,top);}}
 
 });
+if(illustrationStyle==='pixel'&&terrainGrid){
+ const guide=node('g',{'data-gmrcart-terrain-grid':'true','pointer-events':'none'});
+ for(let y=0;y<H;y++)for(let x=0;x<W;x++){
+  const corners=[point(x,y),point(x+1,y),point(x+1,y+1),point(x,y+1)];
+  polygon(corners,'none','#f1dfb4',guide).setAttribute('stroke-width','.45');
+ }
+}
 if(depthDebug){
  const overlay=node('g',{'data-gmrcart-depth-debug':'true','pointer-events':'none'});
  // Show ambiguous projected overlaps without changing any saved data.
