@@ -17,6 +17,19 @@ const assetBase=window.gmrcartScene?.atlasAssetBase||'';
 // The registry is deliberately empty until an approved four-view set is supplied.
 // Sites may register artwork before landscape.js runs via gmrcartBuildingArt.
 const buildingArt=window.gmrcartBuildingArt||{};
+const foliageLibrary=window.gmrcartFoliageLibrary||null;
+// VI.6D.10A: painted foliage can be registered later; legacy tree art remains the fallback.
+function illustratedTree(x,y,center){
+ if(illustrationStyle!=='pixel'||!assetBase||!foliageLibrary)return false;
+ const key=foliageLibrary.pick(x,y),entry=foliageLibrary.get(key);
+ const view=foliageLibrary.view(key,orientation*90);
+ if(!view||!entry)return false;
+ const [width,height]=entry.size;
+ node('image',{href:assetBase.replace(/\/$/,'')+'/'+view,x:center[0]-width/2,y:center[1]+8-height,width,height,
+  preserveAspectRatio:'xMidYMax meet','data-gmrcart-foliage':key,style:'image-rendering:pixelated','pointer-events':'none'});
+ return true;
+}
+
 // Painted appearances reuse a certified prefab footprint; never change scene geometry.
 function artKey(o){return o.type==='cottage'&&o.appearance === 'villageHouse'?'villageHouse':o.type;}
 function hasBuildingIllustration(o){
@@ -387,7 +400,7 @@ raised.forEach(item=>{
   const {x,y}=item,mat=item.kind;
   const a=point(x,y),b=point(x+1,y),c=point(x+1,y+1),d=point(x,y+1),center=point(x+.5,y+.5);
 if(mat==='wall'){const rise=13;polygon([point(x,y,rise),point(x+1,y,rise),point(x+1,y+1,rise),point(x,y+1,rise)],'#a99b95');polygon([b,c,point(x+1,y+1,rise),point(x+1,y,rise)],'#5f5354');polygon([d,c,point(x+1,y+1,rise),point(x,y+1,rise)],'#736565');line(point(x,y,rise),point(x+1,y+1,rise),'#d2c3b5',.8,.7);}
-if(mat==='tree'&&!sprite('tree',center[0]-16,center[1]-49,32,57)){node('ellipse',{cx:center[0]+3,cy:center[1]+6,rx:12,ry:5,fill:'#2c352c',opacity:.4});node('path',{d:`M${center[0]} ${center[1]+4}v-17`,stroke:'#5d3a29','stroke-width':4});node('circle',{cx:center[0]-5,cy:center[1]-15,r:10,fill:'#315b40'});node('circle',{cx:center[0]+5,cy:center[1]-18,r:11,fill:'#4e8555'});node('circle',{cx:center[0],cy:center[1]-24,r:9,fill:'#70a467'});node('circle',{cx:center[0]-4,cy:center[1]-27,r:3.5,fill:'#a0c27b',opacity:.65});}
+if(mat==='tree'&&!illustratedTree(x,y,center)&&!sprite('tree',center[0]-16,center[1]-49,32,57)){node('ellipse',{cx:center[0]+3,cy:center[1]+6,rx:12,ry:5,fill:'#2c352c',opacity:.4});node('path',{d:`M${center[0]} ${center[1]+4}v-17`,stroke:'#5d3a29','stroke-width':4});node('circle',{cx:center[0]-5,cy:center[1]-15,r:10,fill:'#315b40'});node('circle',{cx:center[0]+5,cy:center[1]-18,r:11,fill:'#4e8555'});node('circle',{cx:center[0],cy:center[1]-24,r:9,fill:'#70a467'});node('circle',{cx:center[0]-4,cy:center[1]-27,r:3.5,fill:'#a0c27b',opacity:.65});}
   return;
  }
  const o=item.object;

@@ -256,6 +256,7 @@ GMRCART_CSS;
         wp_enqueue_script('gmrcart-architectural-sketchbook', plugins_url('assets/architectural-sketchbook.js', dirname(__FILE__)), [], GMRCART_VERSION, true);
         wp_enqueue_script('gmrcart-building-illustrations', plugins_url('assets/building-illustrations.js', dirname(__FILE__)), [], GMRCART_VERSION, true);
         wp_enqueue_script('gmrcart-building-palette', plugins_url('assets/building-palette.js', dirname(__FILE__)), ['gmrcart-canvas', 'gmrcart-building-illustrations'], GMRCART_VERSION, true);
+        wp_enqueue_script('gmrcart-foliage-library', plugins_url('assets/foliage-library.js', dirname(__FILE__)), [], GMRCART_VERSION, true);
         wp_enqueue_script('gmrcart-landscape', plugins_url('assets/landscape.js', dirname(__FILE__)), ['gmrcart-canvas', 'gmrcart-atlas-palettes', 'gmrcart-atlas-assets', 'gmrcart-architectural-sketchbook', 'gmrcart-building-illustrations'], GMRCART_VERSION, true);
         wp_add_inline_script('gmrcart-landscape', 'window.gmrcartLandscape = true;', 'before');
         wp_add_inline_script('gmrcart-canvas', 'window.gmrcartScene = ' . wp_json_encode($config) . ';', 'before');
