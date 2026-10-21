@@ -4,7 +4,7 @@
   oak:Object.freeze({label:'MarketRealm Oak',collection:'marketrealm',silhouette:'broadleaf',size:Object.freeze([32,57]),views:Object.freeze([0,90,180,270].map(a=>'foliage/oak-'+a+'.png'))}),
   pine:Object.freeze({label:'Whispering Pine',collection:'marketrealm',silhouette:'evergreen',size:Object.freeze([32,57]),views:Object.freeze([0,90,180,270].map(a=>'foliage/pine-'+a+'.png'))}),
   orchard:Object.freeze({label:'Fructan Orchard Tree',collection:'marketrealm',silhouette:'fruit',size:Object.freeze([32,57]),views:Object.freeze([0,90,180,270].map(a=>'foliage/orchard-'+a+'.png'))}),
-  goldenleaf:Object.freeze({label:'Goldenleaf',collection:'marketrealm',silhouette:'broadleaf',size:Object.freeze([32,57]),views:Object.freeze([0,90,180,270].map(a=>'foliage/oak-'+a+'.png'))}),
+  goldenleaf:Object.freeze({label:'Goldenleaf',collection:'marketrealm',silhouette:'broadleaf',size:Object.freeze([32,57]),views:Object.freeze([0,90,180,270].map(a=>'foliage/goldenleaf-'+a+'.png'))}),
   willow:Object.freeze({label:'Riverside Willow',collection:'marketrealm',silhouette:'weeping',size:Object.freeze([32,57]),views:Object.freeze([0,90,180,270].map(a=>'foliage/willow-'+a+'.png'))})
  });
  const collections=Object.freeze({marketrealm:'Classic MarketRealm',mushroomWoods:'Mushroom Woods',frostreem:'Frostreem',witheredReach:'The Withered Reach',midnightMenu:'Midnight Menu'});
