@@ -1,0 +1,1 @@
+VI.6D.13A — Pippin Opens the Village Tavern. Adds a painted 3x2 Tavern to the pattern book with four transparent PNG views. Existing prefab geometry and Classic mode unchanged. First-pass art for visual review.
