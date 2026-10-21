@@ -73,3 +73,16 @@
 .gmrcart-pattern-card:disabled{opacity:.55;cursor:not-allowed;border-style:dashed}
 .gmrcart-pattern-placeholder{display:grid;place-items:center;width:112px;height:104px;font-size:42px;color:#bca88c;background:#302b2b;border-radius:6px}
 .gmrcart-pattern-status{margin:8px 0 0;color:#f2d8a8}
+
+/* VI.6D.12: compact Keeper toolbar without changing its accessible controls. */
+.gmrcart-canvas-panel .gmrcart-illustration-toolbar{gap:8px 12px;padding:10px 12px}
+.gmrcart-canvas-panel .gmrcart-illustration-toolbar .gmrcart-camera-controls:not([hidden]),
+.gmrcart-canvas-panel .gmrcart-illustration-toolbar .gmrcart-atlas-style:not([hidden]){gap:6px}
+.gmrcart-canvas-panel .gmrcart-illustration-toolbar button{white-space:nowrap}
+.gmrcart-canvas-panel .gmrcart-terrain-grid-toggle{background:#34252a;color:#f4c980;border:1px solid #98724a;border-radius:7px;padding:9px 12px;cursor:pointer}
+.gmrcart-canvas-panel .gmrcart-terrain-grid-toggle[aria-pressed="true"]{background:#d6a44f;color:#24151b}
+.gmrcart-canvas-panel .gmrcart-zoom-controls{display:flex;align-items:center;gap:3px;white-space:nowrap}
+/* The SVG remains static: CSS animates only a handful of ripple groups. */
+.gmrcart-canvas-panel .gmrcart-water-ripple{opacity:0;animation:gmrcart-water-breathe var(--gmrcart-ripple-duration,9s) ease-in-out var(--gmrcart-ripple-delay,0s) infinite;transform-box:fill-box;transform-origin:center}
+@keyframes gmrcart-water-breathe{0%,17%,82%,100%{opacity:0;transform:translate(0,0)}37%{opacity:.8;transform:translate(1px,-.5px)}57%{opacity:.55;transform:translate(2px,-1px)}}
+@media(prefers-reduced-motion:reduce){.gmrcart-canvas-panel .gmrcart-water-ripple{animation:none;opacity:.28;transform:none}}

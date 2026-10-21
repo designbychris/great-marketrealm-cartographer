@@ -123,7 +123,7 @@ function line(a,b,color,width=1,opacity=1){return node('path',{d:`M${a[0]} ${a[1
 function diamond(x,y,fill,stroke='#392c29',z=0){return polygon([point(x,y,z),point(x+1,y,z),point(x+1,y+1,z),point(x,y+1,z)],fill,stroke);}
 function terrainDetail(x,y,mat){const c=point(x+.5,y+.5);const seed=(x*73+y*149)%11;
  if(mat==='floor'){if(seed<4){node('ellipse',{cx:c[0]+seed-5,cy:c[1]+2,rx:3.2,ry:1.3,fill:'#617c49',opacity:.8});line([c[0]+seed-5,c[1]+2],[c[0]+seed-4,c[1]-2],'#789755',.8);}if(seed===8){node('circle',{cx:c[0]-3,cy:c[1],r:1.1,fill:'#e3c98b'});node('circle',{cx:c[0]+1,cy:c[1]-1,r:1,fill:'#e3c98b'});}}
- if(mat==='water'){node('path',{d:`M ${c[0]-9} ${c[1]+2} q 5 -3 10 0 t 9 0`,stroke:'#b5e4e3','stroke-width':1.3,fill:'none',opacity:.7});node('path',{d:`M ${c[0]-4} ${c[1]-3} q 4 -2 8 0`,stroke:'#174e73','stroke-width':1.1,fill:'none',opacity:.55});}
+ if(mat==='water'&&illustrationStyle!=='pixel'){node('path',{d:`M ${c[0]-9} ${c[1]+2} q 5 -3 10 0 t 9 0`,stroke:'#b5e4e3','stroke-width':1.3,fill:'none',opacity:.7});node('path',{d:`M ${c[0]-4} ${c[1]-3} q 4 -2 8 0`,stroke:'#174e73','stroke-width':1.1,fill:'none',opacity:.55});}
 }
 // VI.6C.2: Architectural ink is generated from world-space surfaces, not saved objects.
 // Projecting every stroke through point() keeps details attached at all four camera angles.
@@ -312,7 +312,28 @@ if(seamless){
  }
 }
 
-if(mat==='water'){const adjacent=(dx,dy)=>{const xx=x+dx,yy=y+dy;return xx>=0&&xx<W&&yy>=0&&yy<H&&tiles[yy*W+xx]?.dataset.material==='water';};if(!seamless&&!adjacent(1,0))node('path',{d:`M ${b.join(' ')} L ${c.join(' ')}`,stroke:'#83c2cb','stroke-width':2,fill:'none'});node('path',{d:`M ${center[0]-8} ${center[1]+1} q 8 -5 16 -1`,stroke:'#9fd0d8','stroke-width':1.6,fill:'none',opacity:.7});}
+if(mat==='water'){
+ const adjacent=(dx,dy)=>{const xx=x+dx,yy=y+dy;return xx>=0&&xx<W&&yy>=0&&yy<H&&tiles[yy*W+xx]?.dataset.material==='water';};
+ if(!seamless){
+  if(!adjacent(1,0))node('path',{d:`M ${b.join(' ')} L ${c.join(' ')}`,stroke:'#83c2cb','stroke-width':2,fill:'none'});
+  node('path',{d:`M ${center[0]-8} ${center[1]+1} q 8 -5 16 -1`,stroke:'#9fd0d8','stroke-width':1.6,fill:'none',opacity:.7});
+ }else{
+  // VI.6D.12: sparse world-anchored ripples. The same cell always receives
+  // the same appearance, duration and phase at every camera orientation.
+  const hash=(((x+1)*73856093)^((y+1)*19349663))>>>0;
+  if(hash%7===0){
+   const ox=((hash>>>5)%7)-3,oy=((hash>>>11)%5)-2;
+   const ripple=node('g',{'class':'gmrcart-water-ripple',
+    'data-gmrcart-water-cell':`${x},${y}`,
+    style:`--gmrcart-ripple-delay:-${(hash%91)/10}s;--gmrcart-ripple-duration:${7+(hash%5)}s`,
+    'pointer-events':'none'});
+   node('path',{d:`M ${center[0]-7+ox} ${center[1]+oy} q 5 -2.6 10 -.3 t 5 -.1`,
+    stroke:'#b8e3e0','stroke-width':1.05,fill:'none',opacity:.75},ripple);
+   node('path',{d:`M ${center[0]-4+ox} ${center[1]+oy+3} q 4 -1.8 8 -.1`,
+    stroke:'#79bfc9','stroke-width':.75,fill:'none',opacity:.55},ripple);
+  }
+ }
+}
 
 }
 // VI.6B.3: One camera-depth queue for every raised item. Terrain stays underneath.
