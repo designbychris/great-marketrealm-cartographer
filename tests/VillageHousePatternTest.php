@@ -30,7 +30,7 @@ final class VillageHousePatternTest extends TestCase {
   $art=file_get_contents(dirname(__DIR__).'/assets/building-illustrations.js');
   self::assertStringContainsString("views('village-house-storybook')",$art);
   self::assertStringContainsString("villageHouse:Object.freeze({label:'MarketRealm Village House',status:'painted',prefab:'cottage'",$art);
-  self::assertStringContainsString("const buildings=Object.freeze({cottage,villageHouse})",$art);
+  self::assertStringContainsString("const buildings=Object.freeze({cottage,villageHouse,tavern})",$art);
   $landscape=file_get_contents(dirname(__DIR__).'/assets/landscape.js');
   self::assertStringContainsString("o.type==='cottage'&&o.appearance === 'villageHouse'",$landscape);
   self::assertStringContainsString('buildingArt[artKey(o)]',$landscape);
