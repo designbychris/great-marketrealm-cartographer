@@ -28,7 +28,7 @@ final class VillageHousePatternTest extends TestCase {
  }
  public function test_pattern_is_painted_and_reuses_cottage_geometry(): void {
   $art=file_get_contents(dirname(__DIR__).'/assets/building-illustrations.js');
-  self::assertStringContainsString("views('village-house-painted')",$art);
+  self::assertStringContainsString("views('village-house-storybook')",$art);
   self::assertStringContainsString("villageHouse:Object.freeze({label:'MarketRealm Village House',status:'painted',prefab:'cottage'",$art);
   self::assertStringContainsString("const buildings=Object.freeze({cottage,villageHouse})",$art);
   $landscape=file_get_contents(dirname(__DIR__).'/assets/landscape.js');
