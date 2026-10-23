@@ -137,3 +137,60 @@
   box-shadow:none;
  }
 }
+
+
+/* VI.6D.14A — Pippin Ages the Leatherbound Atlas.
+   Real irregular pebbled grain with worn patina and ornamental brass corners.
+   The texture is a small, locally bundled, seamless transparent PNG. */
+.gmrcart-canvas-panel .gmrcart-landscape-frame{
+  overflow:hidden;
+  background-color:#172c23;
+  background-image:
+    radial-gradient(ellipse 72% 48% at 50% 45%,rgba(93,123,78,.33),transparent 90%),
+    radial-gradient(ellipse 36% 43% at 23% 31%,rgba(151,141,84,.11),transparent 95%),
+    radial-gradient(ellipse 42% 55% at 81% 74%,rgba(12,26,19,.30),transparent 94%),
+    url('textures/keeper-leather-grain.png'),
+    radial-gradient(ellipse at 48% 40%,var(--gmrcart-atlas-leather-glow) 0%,var(--gmrcart-atlas-leather-base) 57%,var(--gmrcart-atlas-leather-shadow) 100%);
+  background-repeat:no-repeat,no-repeat,no-repeat,repeat,no-repeat;
+  background-size:cover,cover,cover,384px 384px,cover;
+  border:2px solid #9e7842;
+  box-shadow:inset 0 0 0 2px #342b20,
+             inset 0 0 0 4px rgba(219,169,83,.58),
+             inset 0 0 0 7px rgba(25,32,23,.72),
+             inset 0 0 44px 12px rgba(4,15,10,.48),
+             0 8px 24px rgba(0,0,0,.28);
+}
+/* The four corner ornaments are outside the SVG map, not scene objects.
+   Two overlay pseudo-elements carry symmetrical pressed-brass flourishes. */
+.gmrcart-canvas-panel .gmrcart-landscape-frame::before,
+.gmrcart-canvas-panel .gmrcart-landscape-frame::after{
+  content:"";
+  position:absolute;
+  z-index:3;
+  left:9px;right:9px;
+  height:36px;
+  pointer-events:none;
+  opacity:.84;
+  background-repeat:no-repeat,no-repeat;
+  background-size:54px 36px,54px 36px;
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='54' height='36' viewBox='0 0 54 36'%3E%3Cpath d='M1 35V12Q1 1 13 1H53 M7 32V14Q7 7 15 7H43 M13 29Q13 13 29 13 M16 26Q20 19 27 20' fill='none' stroke='%23c59a56' stroke-width='1.7'/%3E%3Ccircle cx='15' cy='15' r='2.5' fill='%23e1b976'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='54' height='36' viewBox='0 0 54 36'%3E%3Cpath d='M1 35V12Q1 1 13 1H53 M7 32V14Q7 7 15 7H43 M13 29Q13 13 29 13 M16 26Q20 19 27 20' fill='none' stroke='%23c59a56' stroke-width='1.7'/%3E%3Ccircle cx='15' cy='15' r='2.5' fill='%23e1b976'/%3E%3C/svg%3E");
+  background-position:left top,right top;
+}
+.gmrcart-canvas-panel .gmrcart-landscape-frame::before{
+ top:9px;
+}
+.gmrcart-canvas-panel .gmrcart-landscape-frame::after{
+ bottom:9px;
+ transform:rotate(180deg);
+}
+@media(forced-colors:active){
+ .gmrcart-canvas-panel .gmrcart-landscape-frame{
+   background:Canvas;
+   border:2px solid CanvasText;
+   box-shadow:none;
+ }
+ .gmrcart-canvas-panel .gmrcart-landscape-frame::before,
+ .gmrcart-canvas-panel .gmrcart-landscape-frame::after{display:none}
+}
