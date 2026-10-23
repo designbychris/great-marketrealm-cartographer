@@ -1,0 +1,1 @@
+Wider Keeper canvas overlay. This only widens the illustrated frame and toolbar to their parent container. It does not change the Tavern artwork, map data, camera, or world coordinates. If the WordPress/Elementor outer page column is itself limited, set the page/container to full width separately.

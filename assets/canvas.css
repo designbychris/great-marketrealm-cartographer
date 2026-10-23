@@ -196,3 +196,17 @@
 }
 
 /* VI.6D.14A.1: mirrored right-side flourish; lower ornaments rotate 180deg. */
+
+/* VI.6D.13A.3W — Wider Keeper canvas, without modifying SVG world geometry.
+   Keep toolbar and atlas at the same responsive width. */
+.gmrcart-realm .gmrcart-canvas-panel .gmrcart-landscape-frame,
+.gmrcart-studio .gmrcart-canvas-panel .gmrcart-landscape-frame{
+  width:100%;max-width:none;
+}
+.gmrcart-realm .gmrcart-canvas-panel .gmrcart-illustration-toolbar,
+.gmrcart-studio .gmrcart-canvas-panel .gmrcart-illustration-toolbar{
+  width:100%;max-width:none;
+}
+/* Prevent flex/grid children from forcing horizontal overflow. */
+.gmrcart-realm .gmrcart-canvas-panel,
+.gmrcart-studio .gmrcart-canvas-panel{min-width:0}
