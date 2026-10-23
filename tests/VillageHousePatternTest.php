@@ -18,13 +18,13 @@ final class VillageHousePatternTest extends TestCase {
  }
  public function test_village_house_sprite_is_scaled_and_drawn_as_one_depth_surface(): void {
   $js=file_get_contents(dirname(__DIR__).'/assets/landscape.js');
-  self::assertStringContainsString("artKey(o)==='villageHouse'?1.3:1",$js);
+  self::assertStringContainsString("artKey(o)==='villageHouse'?1.3:(artKey(o)==='tavern'?1.08:1)",$js);
   self::assertStringContainsString('const left=x-(width-footprintWidth)/2',$js);
   self::assertStringContainsString('x:left,y:ground-height,width,height',$js);
   self::assertStringContainsString("preserveAspectRatio:'xMidYMax meet'",$js);
   self::assertStringContainsString("if(item.surface==='roof'&&hasBuildingIllustration(o))return;",$js);
   self::assertStringContainsString("if(item.surface==='details'&&!stone&&illustratedBuilding(o,w,h))return;",$js);
-  self::assertStringContainsString("artKey(item.object)==='villageHouse'?54:42",$js);
+  self::assertStringContainsString("['villageHouse','tavern'].includes(artKey(item.object))?54:42",$js);
  }
  public function test_pattern_is_painted_and_reuses_cottage_geometry(): void {
   $art=file_get_contents(dirname(__DIR__).'/assets/building-illustrations.js');
