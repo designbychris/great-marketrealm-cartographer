@@ -1,0 +1,1 @@
+VI.6D.13A.3 Tavern rebuild preview: four distinct transparent sprites built from the approved cottage and village-house artwork, plus a hanging inn sign. Renderer scale and silhouette height updated, geometry untouched. Review in all four orientations before art sign-off. Run PHPUnit.

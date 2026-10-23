@@ -54,7 +54,7 @@ function illustratedBuilding(o,w,h){
  // VI.6D.7E: keep the complete two-storey illustration proportional to its
  // certified 2x2 footprint. Scale about the centre; anchor its foundation to ground.
  // The transparent padding is part of the painter-approved four-view sprite.
- const scale=artKey(o)==='villageHouse'?1.3:1;
+ const scale=artKey(o)==='villageHouse'?1.3:(artKey(o)==='tavern'?1.08:1);
  const width=footprintWidth*scale;
  const height=width*(Number(entry.aspect)||1.1);
  const left=x-(width-footprintWidth)/2;
@@ -378,7 +378,7 @@ function surfaceHeight(item){
  if(item.kind==='wall')return [0,13];
  if(item.kind==='prefab-surface'){
   const stone=['chamber','crypt','corridor'].includes(item.object.type);
-  if(hasBuildingIllustration(item.object))return [0,artKey(item.object)==='villageHouse'?54:42];
+  if(hasBuildingIllustration(item.object))return [0,['villageHouse','tavern'].includes(artKey(item.object))?54:42];
   if(item.surface==='base')return [0,stone?12:22];
   if(item.surface==='roof')return [stone?12:22,stone?12:40];
   return [22,stone?22:42];
