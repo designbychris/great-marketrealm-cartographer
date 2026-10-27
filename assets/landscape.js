@@ -122,6 +122,7 @@ function shade(hex,delta){const value=hex.replace('#','');if(!/^[0-9a-f]{6}$/i.t
 function line(a,b,color,width=1,opacity=1){return node('path',{d:`M${a[0]} ${a[1]}L${b[0]} ${b[1]}`,stroke:color,'stroke-width':width,opacity,fill:'none','stroke-linecap':'round'});}
 function diamond(x,y,fill,stroke='#392c29',z=0){return polygon([point(x,y,z),point(x+1,y,z),point(x+1,y+1,z),point(x,y+1,z)],fill,stroke);}
 function terrainDetail(x,y,mat){const c=point(x+.5,y+.5);const seed=(x*73+y*149)%11;
+ if(mat==='road'){node('path',{d:`M ${c[0]-7} ${c[1]} l 4 -2 m 3 4 l 5 -2`,stroke:'#a9a49a','stroke-width':.85,opacity:.42,fill:'none'});}
  if(mat==='floor'){if(seed<4){node('ellipse',{cx:c[0]+seed-5,cy:c[1]+2,rx:3.2,ry:1.3,fill:'#617c49',opacity:.8});line([c[0]+seed-5,c[1]+2],[c[0]+seed-4,c[1]-2],'#789755',.8);}if(seed===8){node('circle',{cx:c[0]-3,cy:c[1],r:1.1,fill:'#e3c98b'});node('circle',{cx:c[0]+1,cy:c[1]-1,r:1,fill:'#e3c98b'});}}
  if(mat==='water'&&illustrationStyle!=='pixel'){node('path',{d:`M ${c[0]-9} ${c[1]+2} q 5 -3 10 0 t 9 0`,stroke:'#b5e4e3','stroke-width':1.3,fill:'none',opacity:.7});node('path',{d:`M ${c[0]-4} ${c[1]-3} q 4 -2 8 0`,stroke:'#174e73','stroke-width':1.1,fill:'none',opacity:.55});}
 }
@@ -287,7 +288,7 @@ const tiles=Array.from(grid.querySelectorAll('.gmrcart-cell'));
 const order=[];for(let y=0;y<H;y++)for(let x=0;x<W;x++){const [u,v]=orient(x+.5,y+.5);order.push({x,y,depth:u+v});}order.sort((a,b)=>a.depth-b.depth);for(const {x,y} of order){const mat=tiles[y*W+x]?.dataset.material||'empty';const a=point(x,y),b=point(x+1,y),c=point(x+1,y+1),d=point(x,y+1),center=point(x+.5,y+.5);
 const colors=atlas;
 const seamless=illustrationStyle==='pixel';
-const fill=mat==='floor'?shade(colors.floor,(x*17+y*11)%19-9):colors[mat]||colors.empty;
+const fill=mat==='road'?'#827e75':mat==='floor'?shade(colors.floor,(x*17+y*11)%19-9):colors[mat]||colors.empty;
 polygon([a,b,c,d],fill,seamless?'none':'#392c29');
 terrainDetail(x,y,mat);
 if(seamless){

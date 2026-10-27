@@ -263,7 +263,7 @@ GMRCART_CSS;
         echo '<section class="gmrcart-panel gmrcart-canvas-panel"><h2>' . esc_html__('Pippin’s construction canvas', 'great-marketrealm-cartographer') . '</h2>';
         echo '<p class="gmrcart-muted">' . esc_html__('Choose a material, then click or drag across the grid. Save to keep your work.', 'great-marketrealm-cartographer') . '</p>';
         echo '<div class="gmrcart-tools" role="toolbar" aria-label="Construction materials">';
-        foreach (['floor'=>__('Ground', 'great-marketrealm-cartographer'), 'wall'=>__('Wall', 'great-marketrealm-cartographer'), 'water'=>__('Water', 'great-marketrealm-cartographer'), 'tree'=>__('Tree', 'great-marketrealm-cartographer'), 'erase'=>__('Erase', 'great-marketrealm-cartographer')] as $key=>$label) {
+        foreach (['floor'=>__('Ground', 'great-marketrealm-cartographer'), 'wall'=>__('Wall', 'great-marketrealm-cartographer'), 'water'=>__('Water', 'great-marketrealm-cartographer'), 'tree'=>__('Tree', 'great-marketrealm-cartographer'), 'road'=>__('Road', 'great-marketrealm-cartographer'), 'erase'=>__('Erase', 'great-marketrealm-cartographer')] as $key=>$label) {
             echo '<button type="button" class="gmrcart-tool" data-material="' . esc_attr($key) . '" aria-pressed="' . ($key === 'floor' ? 'true' : 'false') . '">' . esc_html($label) . '</button>';
         }
         echo '</div><div class="gmrcart-library" aria-label="Construction Library"><h3>' . esc_html__('Construction Library', 'great-marketrealm-cartographer') . '</h3><p class="gmrcart-muted">' . esc_html__('Browse reusable structures. Choose one, then click the grid to place it.', 'great-marketrealm-cartographer') . '</p>';

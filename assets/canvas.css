@@ -210,3 +210,6 @@
 /* Prevent flex/grid children from forcing horizontal overflow. */
 .gmrcart-realm .gmrcart-canvas-panel,
 .gmrcart-studio .gmrcart-canvas-panel{min-width:0}
+
+/* VI.6D.15A: roadworks material remains editable on the construction grid. */
+.gmrcart-cell[data-material="road"]{background:#837e73;box-shadow:inset 0 0 0 2px #b2a99a}
