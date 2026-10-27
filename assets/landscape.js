@@ -172,6 +172,39 @@ function cobblestones(x,y,tiles){
  // connected pavement: only exposed borders receive verges.
  return connected;
 }
+// VI.6D.15C: deterministic world-space surface detail, no extra scene fields.
+const pathMaterials=['road','dirt_track','market_paving','woodland_path'];
+function pathAt(tiles,x,y,mat){return x>=0&&y>=0&&x<W&&y<H&&tiles[y*W+x]?.dataset.material===mat;}
+function pathSurface(x,y,tiles,mat){
+ const hash=(a,b)=>Math.abs(((a*92821+b*68917+71)^((a+b)*173))|0);
+ const palette=mat==='market_paving'?['#bdb4a4','#aaa496','#c8bdad','#97958a']:mat==='dirt_track'?['#b99a70','#a98a61','#c3a47b','#927854']:['#8a8d61','#7d8459','#a29b71','#66764d'];
+ if(mat==='market_paving'){
+  for(let row=0;row<4;row++)for(let col=0;col<4;col++){
+   const offset=(row%2)*.3,u=(col+offset)/4,v=row/4;
+   if(u>=.99)continue;
+   polygon([[u+.025,v+.035],[Math.min(.99,u+.235),v+.035],[Math.min(.99,u+.235),v+.225],[u+.025,v+.225]].map(q=>point(x+q[0],y+q[1])),palette[hash(x*4+col,y*4+row)%4],'#777568');
+  }
+ }else{
+  for(let i=0;i<24;i++){
+   const n=hash(x*29+i,y*31),u=((n%997)+.5)/998,v=((Math.floor(n/7)%991)+.5)/992,p=point(x+u,y+v);
+   node('ellipse',{cx:p[0],cy:p[1],rx:(mat==='dirt_track'?.8:1.25)+(n%3)*.28,ry:.35+(n%2)*.25,fill:palette[n%4],opacity:.75});
+   if(mat==='woodland_path'&&i%6===0)node('circle',{cx:p[0]+2,cy:p[1]-1,r:1.1,fill:'#4c6b3b',opacity:.85});
+  }
+  if(mat==='dirt_track')for(const u of [.31,.68])line(point(x+u,y+.04),point(x+u,y+.96),'#796b4e',1.05,.42);
+ }
+ const edges=[[[x,y],[x+1,y],0,-1],[[x+1,y],[x+1,y+1],1,0],[[x+1,y+1],[x,y+1],0,1],[[x,y+1],[x,y],-1,0]];
+ edges.forEach((edge,i)=>{
+  if(pathAt(tiles,x+edge[2],y+edge[3],mat))return;
+  const a=point(...edge[0]),b=point(...edge[1]);
+  line(a,b,mat==='market_paving'?'#8e9277':'#74845c',mat==='market_paving'?.8:1.6,.62);
+  if(mat==='market_paving')return;
+  for(let k=1;k<=5;k++){
+   const t=k/6,n=hash(x*9+i*7+k,y*11+i);
+   if(n%4===0)continue;
+   node('ellipse',{cx:a[0]+(b[0]-a[0])*t,cy:a[1]+(b[1]-a[1])*t,rx:mat==='woodland_path'?1.7:1.1,ry:.5,fill:n%2?'#69804c':'#82905b',opacity:.65});
+  }
+ });
+}
 // VI.6C.2: Architectural ink is generated from world-space surfaces, not saved objects.
 // Projecting every stroke through point() keeps details attached at all four camera angles.
 function architecturalRoofInk(o,w,h,top,stone){
@@ -334,10 +367,11 @@ const tiles=Array.from(grid.querySelectorAll('.gmrcart-cell'));
 const order=[];for(let y=0;y<H;y++)for(let x=0;x<W;x++){const [u,v]=orient(x+.5,y+.5);order.push({x,y,depth:u+v});}order.sort((a,b)=>a.depth-b.depth);for(const {x,y} of order){const mat=tiles[y*W+x]?.dataset.material||'empty';const a=point(x,y),b=point(x+1,y),c=point(x+1,y+1),d=point(x,y+1),center=point(x+.5,y+.5);
 const colors=atlas;
 const seamless=illustrationStyle==='pixel';
-const fill=mat==='road'?'#726f66':mat==='floor'?shade(colors.floor,(x*17+y*11)%19-9):colors[mat]||colors.empty;
+const fill=mat==='dirt_track'?'#9b805c':mat==='market_paving'?'#a29b8c':mat==='woodland_path'?'#777b55':mat==='road'?'#726f66':mat==='floor'?shade(colors.floor,(x*17+y*11)%19-9):colors[mat]||colors.empty;
 polygon([a,b,c,d],fill,seamless?'none':'#392c29');
 terrainDetail(x,y,mat);
 if(mat==='road')cobblestones(x,y,tiles);
+if(mat==='dirt_track'||mat==='market_paving'||mat==='woodland_path')pathSurface(x,y,tiles,mat);
 if(seamless){
  // Only material boundaries are inked, never same-material tile seams.
  // Check neighbours in world coordinates so all four camera views agree.
@@ -351,7 +385,7 @@ if(seamless){
  ];
  for(const edge of edges){
   const neighbour=materialAt(x+edge.dx,y+edge.dy);
-  if(neighbour===mat||mat==='road')continue;
+  if(neighbour===mat||pathMaterials.includes(mat))continue;
   // Preserve the board silhouette; distinguish banks and paths without black tile outlines.
   const bank=mat==='water'||neighbour==='water';
   const color=bank?'#83b8b6':neighbour===null?'#645b46':'#746e55';

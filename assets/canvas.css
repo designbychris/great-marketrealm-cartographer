@@ -213,3 +213,8 @@
 
 /* VI.6D.15A: roadworks material remains editable on the construction grid. */
 .gmrcart-cell[data-material="road"]{background:#837e73;box-shadow:inset 0 0 0 2px #b2a99a}
+
+/* VI.6D.15C: new path paint tools */
+.gmrcart-cell[data-material="dirt_track"]{background:#a48760;box-shadow:inset 0 0 0 2px #c1a47b}
+.gmrcart-cell[data-material="market_paving"]{background:#a6a094;box-shadow:inset 0 0 0 2px #c9c2b5}
+.gmrcart-cell[data-material="woodland_path"]{background:#68764d;box-shadow:inset 0 0 0 2px #a3a478}
