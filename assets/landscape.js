@@ -126,10 +126,73 @@ function terrainDetail(x,y,mat){const c=point(x+.5,y+.5);const seed=(x*73+y*149)
  if(mat==='floor'){if(seed<4){node('ellipse',{cx:c[0]+seed-5,cy:c[1]+2,rx:3.2,ry:1.3,fill:'#617c49',opacity:.8});line([c[0]+seed-5,c[1]+2],[c[0]+seed-4,c[1]-2],'#789755',.8);}if(seed===8){node('circle',{cx:c[0]-3,cy:c[1],r:1.1,fill:'#e3c98b'});node('circle',{cx:c[0]+1,cy:c[1]-1,r:1,fill:'#e3c98b'});}}
  if(mat==='water'&&illustrationStyle!=='pixel'){node('path',{d:`M ${c[0]-9} ${c[1]+2} q 5 -3 10 0 t 9 0`,stroke:'#b5e4e3','stroke-width':1.3,fill:'none',opacity:.7});node('path',{d:`M ${c[0]-4} ${c[1]-3} q 4 -2 8 0`,stroke:'#174e73','stroke-width':1.1,fill:'none',opacity:.55});}
 }
+// VI.6D.15D: The neighbour register is view-only. Prefab footprints are
+// derived from the same placed objects and quarter-turn rules as the painter.
+// Do not store edge classifications in scenes: dungeon walls and doorways can
+// later share this vocabulary without changing the saved construction grid.
+function neighbourRegister(tiles,objects){
+ const occupied=new Set();
+ for(const o of objects){
+  if(!Number.isInteger(o.x)||!Number.isInteger(o.y))continue;
+  let [w,h]=window.gmrcartScene?.prefabs?.[o.type]?.size||[1,1];
+  if(((Number(o.rotation)||0)%180+180)%180!==0)[w,h]=[h,w];
+  for(let yy=o.y;yy<o.y+h;yy++)for(let xx=o.x;xx<o.x+w;xx++)
+   if(xx>=0&&yy>=0&&xx<W&&yy<H)occupied.add(yy*W+xx);
+ }
+ const material=(x,y)=>x>=0&&y>=0&&x<W&&y<H?(tiles[y*W+x]?.dataset.material||'empty'):null;
+ const kind=(x,y)=>{
+  const mat=material(x,y);
+  if(mat===null)return 'boundary';
+  if(occupied.has(y*W+x)||mat==='wall')return 'architecture';
+  if(mat==='water')return 'water';
+  if(pathMaterials.includes(mat))return 'path';
+  return 'nature';
+ };
+ return {material,kind};
+}
+function pathEdge(x,y,dx,dy,mat,neighbours){
+ const nx=x+dx,ny=y+dy,next=neighbours.material(nx,ny);
+ if(next===mat)return 'joined';
+ return neighbours.kind(nx,ny);
+}
+function drawPathEdge(a,b,kind,mat,seed){
+ if(kind==='joined')return;
+ const stone=mat==='road'||mat==='market_paving';
+ if(kind==='architecture'){
+  // A narrow, straight stone threshold; never sprinkle grass against walls.
+  line(a,b,stone?'#6c675e':'#827762',1.25,.92);
+  line([a[0],a[1]-.65],[b[0],b[1]-.65],stone?'#c7bcaa':'#a89978',.55,.68);
+  return;
+ }
+ if(kind==='water'){
+  // A clear bank, with no foliage extending into the water surface.
+  line(a,b,stone?'#a99f8c':'#817b62',1.5,.85);
+  line([a[0],a[1]+.8],[b[0],b[1]+.8],'#8eb8b3',.8,.65);
+  return;
+ }
+ if(kind==='path'){
+  // Mixed path materials meet directly; a light seam marks the change.
+  line(a,b,stone?'#8f8979':'#8a8265',.7,.5);
+  return;
+ }
+ if(kind==='boundary'){
+  line(a,b,stone?'#756e5e':'#69734e',1.05,.72);
+  return;
+ }
+ // Natural borders are broken and irregular, but remain on their own edge.
+ line(a,b,stone?'#7b805f':'#6f8257',stone?1.05:1.3,.55);
+ for(let k=1;k<=6;k++){
+  const n=((seed*73+k*127)>>>0),t=(k+.22*((n%3)-1))/7;
+  if(n%5===0)continue;
+  const cx=a[0]+(b[0]-a[0])*t,cy=a[1]+(b[1]-a[1])*t;
+  node('ellipse',{cx,cy,rx:stone?.8:1.45,ry:stone?.38:.6,
+   fill:n%2?'#7c8d57':'#617a49',opacity:.5+(n%3)*.12});
+ }
+}
 // VI.6D.15B: deterministic world-space cobblestones. Road connectivity comes
 // exclusively from adjacent saved road cells, not from extra scene fields.
 function roadAt(tiles,x,y){return x>=0&&y>=0&&x<W&&y<H&&tiles[y*W+x]?.dataset.material==='road';}
-function cobblestones(x,y,tiles){
+function cobblestones(x,y,tiles,neighbours){
  const north=roadAt(tiles,x,y-1),east=roadAt(tiles,x+1,y),south=roadAt(tiles,x,y+1),west=roadAt(tiles,x-1,y);
  const connected=[north,east,south,west].filter(Boolean).length;
  // The pavement is continuous across same-road edges; no per-cell frame.
@@ -152,22 +215,13 @@ function cobblestones(x,y,tiles){
  // Edges only where the paving meets another surface. Moss and a thin
  // irregular verge soften the boundary without obscuring adjoining roads.
  const borders=[
-  {on:!north,a:[x,y],b:[x+1,y]},
-  {on:!east,a:[x+1,y],b:[x+1,y+1]},
-  {on:!south,a:[x+1,y+1],b:[x,y+1]},
-  {on:!west,a:[x,y+1],b:[x,y]}
+  {dx:0,dy:-1,a:[x,y],b:[x+1,y]},
+  {dx:1,dy:0,a:[x+1,y],b:[x+1,y+1]},
+  {dx:0,dy:1,a:[x+1,y+1],b:[x,y+1]},
+  {dx:-1,dy:0,a:[x,y+1],b:[x,y]}
  ];
- for(let i=0;i<borders.length;i++){
-  const edge=borders[i];if(!edge.on)continue;
-  const a=point(...edge.a),b=point(...edge.b);
-  line(a,b,'#7c815c',1.6,.8);
-  for(let j=1;j<5;j++){
-   const t=j/5,seed=x*31+y*47+i*13+j*17;
-   if(seed%3===0)continue;
-   const cx=a[0]+(b[0]-a[0])*t,cy=a[1]+(b[1]-a[1])*t;
-   node('ellipse',{cx,cy,rx:1.1,ry:.5,fill:seed%2?'#7c8b57':'#64764a',opacity:.75});
-  }
- }
+ borders.forEach((edge,i)=>drawPathEdge(point(...edge.a),point(...edge.b),
+  pathEdge(x,y,edge.dx,edge.dy,'road',neighbours),'road',x*31+y*47+i*13));
  // Endpoint, straight, corner, tee and crossroads are all the same
  // connected pavement: only exposed borders receive verges.
  return connected;
@@ -175,7 +229,7 @@ function cobblestones(x,y,tiles){
 // VI.6D.15C: deterministic world-space surface detail, no extra scene fields.
 const pathMaterials=['road','dirt_track','market_paving','woodland_path'];
 function pathAt(tiles,x,y,mat){return x>=0&&y>=0&&x<W&&y<H&&tiles[y*W+x]?.dataset.material===mat;}
-function pathSurface(x,y,tiles,mat){
+function pathSurface(x,y,tiles,mat,neighbours){
  const hash=(a,b)=>Math.abs(((a*92821+b*68917+71)^((a+b)*173))|0);
  const palette=mat==='market_paving'?['#bdb4a4','#aaa496','#c8bdad','#97958a']:mat==='dirt_track'?['#b99a70','#a98a61','#c3a47b','#927854']:['#8a8d61','#7d8459','#a29b71','#66764d'];
  if(mat==='market_paving'){
@@ -193,17 +247,8 @@ function pathSurface(x,y,tiles,mat){
   if(mat==='dirt_track')for(const u of [.31,.68])line(point(x+u,y+.04),point(x+u,y+.96),'#796b4e',1.05,.42);
  }
  const edges=[[[x,y],[x+1,y],0,-1],[[x+1,y],[x+1,y+1],1,0],[[x+1,y+1],[x,y+1],0,1],[[x,y+1],[x,y],-1,0]];
- edges.forEach((edge,i)=>{
-  if(pathAt(tiles,x+edge[2],y+edge[3],mat))return;
-  const a=point(...edge[0]),b=point(...edge[1]);
-  line(a,b,mat==='market_paving'?'#8e9277':'#74845c',mat==='market_paving'?.8:1.6,.62);
-  if(mat==='market_paving')return;
-  for(let k=1;k<=5;k++){
-   const t=k/6,n=hash(x*9+i*7+k,y*11+i);
-   if(n%4===0)continue;
-   node('ellipse',{cx:a[0]+(b[0]-a[0])*t,cy:a[1]+(b[1]-a[1])*t,rx:mat==='woodland_path'?1.7:1.1,ry:.5,fill:n%2?'#69804c':'#82905b',opacity:.65});
-  }
- });
+ edges.forEach((edge,i)=>drawPathEdge(point(...edge[0]),point(...edge[1]),
+  pathEdge(x,y,edge[2],edge[3],mat,neighbours),mat,x*37+y*53+i*19));
 }
 // VI.6C.2: Architectural ink is generated from world-space surfaces, not saved objects.
 // Projecting every stroke through point() keeps details attached at all four camera angles.
@@ -364,14 +409,16 @@ function buildingDetails(o,w,h,top){
 
 function draw(){if(!active)return;preview.replaceChildren();applyViewport();preview.setAttribute('role','img');preview.setAttribute('aria-label',`Isometric preview of the current construction scene, ${cameraNames[orientation]} view`);
 const tiles=Array.from(grid.querySelectorAll('.gmrcart-cell'));
+const sceneObjects=window.gmrcartObjects?.()||[];
+const neighbours=neighbourRegister(tiles,sceneObjects);
 const order=[];for(let y=0;y<H;y++)for(let x=0;x<W;x++){const [u,v]=orient(x+.5,y+.5);order.push({x,y,depth:u+v});}order.sort((a,b)=>a.depth-b.depth);for(const {x,y} of order){const mat=tiles[y*W+x]?.dataset.material||'empty';const a=point(x,y),b=point(x+1,y),c=point(x+1,y+1),d=point(x,y+1),center=point(x+.5,y+.5);
 const colors=atlas;
 const seamless=illustrationStyle==='pixel';
 const fill=mat==='dirt_track'?'#9b805c':mat==='market_paving'?'#a29b8c':mat==='woodland_path'?'#777b55':mat==='road'?'#726f66':mat==='floor'?shade(colors.floor,(x*17+y*11)%19-9):colors[mat]||colors.empty;
 polygon([a,b,c,d],fill,seamless?'none':'#392c29');
 terrainDetail(x,y,mat);
-if(mat==='road')cobblestones(x,y,tiles);
-if(mat==='dirt_track'||mat==='market_paving'||mat==='woodland_path')pathSurface(x,y,tiles,mat);
+if(mat==='road')cobblestones(x,y,tiles,neighbours);
+if(mat==='dirt_track'||mat==='market_paving'||mat==='woodland_path')pathSurface(x,y,tiles,mat,neighbours);
 if(seamless){
  // Only material boundaries are inked, never same-material tile seams.
  // Check neighbours in world coordinates so all four camera views agree.
@@ -427,7 +474,7 @@ for(let y=0;y<H;y++)for(let x=0;x<W;x++){
  const mat=tiles[y*W+x]?.dataset.material||'empty';
  if(mat==='wall'||mat==='tree')raised.push({kind:mat,x,y,depth:depth(x+.5,y+.5),tie:0});
 }
-const objects=window.gmrcartObjects?.()||[];
+const objects=sceneObjects;
 objects.forEach((o,index)=>{
  let [w,h]=(window.gmrcartScene?.prefabs?.[o.type]?.size)||[1,1];
  if(o.rotation%180)[w,h]=[h,w];
