@@ -122,9 +122,55 @@ function shade(hex,delta){const value=hex.replace('#','');if(!/^[0-9a-f]{6}$/i.t
 function line(a,b,color,width=1,opacity=1){return node('path',{d:`M${a[0]} ${a[1]}L${b[0]} ${b[1]}`,stroke:color,'stroke-width':width,opacity,fill:'none','stroke-linecap':'round'});}
 function diamond(x,y,fill,stroke='#392c29',z=0){return polygon([point(x,y,z),point(x+1,y,z),point(x+1,y+1,z),point(x,y+1,z)],fill,stroke);}
 function terrainDetail(x,y,mat){const c=point(x+.5,y+.5);const seed=(x*73+y*149)%11;
- if(mat==='road'){node('path',{d:`M ${c[0]-7} ${c[1]} l 4 -2 m 3 4 l 5 -2`,stroke:'#a9a49a','stroke-width':.85,opacity:.42,fill:'none'});}
+ 
  if(mat==='floor'){if(seed<4){node('ellipse',{cx:c[0]+seed-5,cy:c[1]+2,rx:3.2,ry:1.3,fill:'#617c49',opacity:.8});line([c[0]+seed-5,c[1]+2],[c[0]+seed-4,c[1]-2],'#789755',.8);}if(seed===8){node('circle',{cx:c[0]-3,cy:c[1],r:1.1,fill:'#e3c98b'});node('circle',{cx:c[0]+1,cy:c[1]-1,r:1,fill:'#e3c98b'});}}
  if(mat==='water'&&illustrationStyle!=='pixel'){node('path',{d:`M ${c[0]-9} ${c[1]+2} q 5 -3 10 0 t 9 0`,stroke:'#b5e4e3','stroke-width':1.3,fill:'none',opacity:.7});node('path',{d:`M ${c[0]-4} ${c[1]-3} q 4 -2 8 0`,stroke:'#174e73','stroke-width':1.1,fill:'none',opacity:.55});}
+}
+// VI.6D.15B: deterministic world-space cobblestones. Road connectivity comes
+// exclusively from adjacent saved road cells, not from extra scene fields.
+function roadAt(tiles,x,y){return x>=0&&y>=0&&x<W&&y<H&&tiles[y*W+x]?.dataset.material==='road';}
+function cobblestones(x,y,tiles){
+ const north=roadAt(tiles,x,y-1),east=roadAt(tiles,x+1,y),south=roadAt(tiles,x,y+1),west=roadAt(tiles,x-1,y);
+ const connected=[north,east,south,west].filter(Boolean).length;
+ // The pavement is continuous across same-road edges; no per-cell frame.
+ // World-coordinate staggered courses preserve their orientation when the camera turns.
+ const stoneColors=['#a8a092','#938d81','#b4aa98','#847f76','#9d9588','#b8ae9c'];
+ const cols=5,rows=5;
+ for(let row=0;row<rows;row++)for(let col=0;col<cols;col++){
+  const seed=((x*cols+col)*73+(y*rows+row)*137+19)>>>0;
+  const stagger=(row%2)*.45;
+  const u0=(col+stagger+.075)/cols,u1=(col+1+stagger-.075)/cols;
+  // Do not draw stones outside this tile; the stagger wraps at the tile edge.
+  if(u0>=1)continue;
+  const v0=(row+.11)/rows,v1=(row+.89)/rows;
+  const wobble=((seed%7)-3)*.003;
+  const corners=[point(x+u0,y+v0),point(x+Math.min(.99,u1),y+v0+wobble),point(x+Math.min(.99,u1),y+v1),point(x+u0,y+v1-wobble)];
+  polygon(corners,stoneColors[seed%stoneColors.length],'#5f5e56');
+  const mid=point(x+(u0+Math.min(.99,u1))*.5,y+(v0+v1)*.5);
+  if(seed%9===0)node('circle',{cx:mid[0],cy:mid[1],r:.55,fill:'#d5c6a8',opacity:.55});
+ }
+ // Edges only where the paving meets another surface. Moss and a thin
+ // irregular verge soften the boundary without obscuring adjoining roads.
+ const borders=[
+  {on:!north,a:[x,y],b:[x+1,y]},
+  {on:!east,a:[x+1,y],b:[x+1,y+1]},
+  {on:!south,a:[x+1,y+1],b:[x,y+1]},
+  {on:!west,a:[x,y+1],b:[x,y]}
+ ];
+ for(let i=0;i<borders.length;i++){
+  const edge=borders[i];if(!edge.on)continue;
+  const a=point(...edge.a),b=point(...edge.b);
+  line(a,b,'#7c815c',1.6,.8);
+  for(let j=1;j<5;j++){
+   const t=j/5,seed=x*31+y*47+i*13+j*17;
+   if(seed%3===0)continue;
+   const cx=a[0]+(b[0]-a[0])*t,cy=a[1]+(b[1]-a[1])*t;
+   node('ellipse',{cx,cy,rx:1.1,ry:.5,fill:seed%2?'#7c8b57':'#64764a',opacity:.75});
+  }
+ }
+ // Endpoint, straight, corner, tee and crossroads are all the same
+ // connected pavement: only exposed borders receive verges.
+ return connected;
 }
 // VI.6C.2: Architectural ink is generated from world-space surfaces, not saved objects.
 // Projecting every stroke through point() keeps details attached at all four camera angles.
@@ -288,9 +334,10 @@ const tiles=Array.from(grid.querySelectorAll('.gmrcart-cell'));
 const order=[];for(let y=0;y<H;y++)for(let x=0;x<W;x++){const [u,v]=orient(x+.5,y+.5);order.push({x,y,depth:u+v});}order.sort((a,b)=>a.depth-b.depth);for(const {x,y} of order){const mat=tiles[y*W+x]?.dataset.material||'empty';const a=point(x,y),b=point(x+1,y),c=point(x+1,y+1),d=point(x,y+1),center=point(x+.5,y+.5);
 const colors=atlas;
 const seamless=illustrationStyle==='pixel';
-const fill=mat==='road'?'#827e75':mat==='floor'?shade(colors.floor,(x*17+y*11)%19-9):colors[mat]||colors.empty;
+const fill=mat==='road'?'#726f66':mat==='floor'?shade(colors.floor,(x*17+y*11)%19-9):colors[mat]||colors.empty;
 polygon([a,b,c,d],fill,seamless?'none':'#392c29');
 terrainDetail(x,y,mat);
+if(mat==='road')cobblestones(x,y,tiles);
 if(seamless){
  // Only material boundaries are inked, never same-material tile seams.
  // Check neighbours in world coordinates so all four camera views agree.
@@ -304,7 +351,7 @@ if(seamless){
  ];
  for(const edge of edges){
   const neighbour=materialAt(x+edge.dx,y+edge.dy);
-  if(neighbour===mat)continue;
+  if(neighbour===mat||mat==='road')continue;
   // Preserve the board silhouette; distinguish banks and paths without black tile outlines.
   const bank=mat==='water'||neighbour==='water';
   const color=bank?'#83b8b6':neighbour===null?'#645b46':'#746e55';
