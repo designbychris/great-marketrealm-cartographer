@@ -148,10 +148,12 @@ function neighbourRegister(tiles,objects){
   if(pathMaterials.includes(mat))return 'path';
   return 'nature';
  };
- return {material,kind};
+ return {material,kind,hasStructure:(x,y)=>x>=0&&y>=0&&x<W&&y<H&&occupied.has(y*W+x)};
 }
 function pathEdge(x,y,dx,dy,mat,neighbours){
  const nx=x+dx,ny=y+dy,next=neighbours.material(nx,ny);
+ // Check occupied footprints before same-material joining: buildings may sit on paving.
+ if(neighbours.hasStructure(nx,ny)||next==='wall')return 'architecture';
  if(next===mat)return 'joined';
  return neighbours.kind(nx,ny);
 }
